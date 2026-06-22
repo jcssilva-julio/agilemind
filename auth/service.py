@@ -1,18 +1,19 @@
 """
-Regras de negócio de autenticação: criação/desativação via senha master, login
-(com rate limit e checagem de conta ativa) e gestão de sessão server-side.
+Regras de autenticação do dia a dia: login (com rate limit e conta ativa),
+sessão server-side e troca de senha pelo próprio usuário.
 
-Não conhece Flask nem Supabase diretamente — recebe provider/repos por injeção.
+A criação/gestão de usuários NÃO está aqui — fica na camada de administração
+(AdminService), feita por um admin autenticado. A senha master só aparece no
+bootstrap/emergência.
 """
 from __future__ import annotations
 
-import re
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from services.errors import Conflict, RateLimited, Unauthorized, ValidationError
-
-_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+from services.errors import Unauthorized, ValidationError
+from services.passwords import validate_strength
+from services.validation import normalize_email
 
 
 class AuthService:
@@ -23,57 +24,26 @@ class AuthService:
         self.sessions = sessions
         self.rate_limiter = rate_limiter
 
-    # ── Admin (exige senha master) ──────────────────────────────────────
-    def _check_master(self, master_password) -> None:
-        # Ausente = requisição malformada (400, AUTH-03); presente e errada = 401 (AUTH-02).
-        if master_password is None or master_password == "":
-            raise ValidationError("Senha master obrigatória")
-        expected = self.cfg.MASTER_PASSWORD or ""
-        # Comparação em tempo constante; mensagem genérica.
-        if not secrets.compare_digest(str(master_password), expected):
-            raise Unauthorized()
-
-    def create_user(self, master_password, email, password, nome) -> str:
-        self._check_master(master_password)
-        email = (email or "").strip().lower()
-        if not _EMAIL_RE.match(email):
-            raise ValidationError("E-mail inválido")
-        if not password or len(password) < self.cfg.MIN_PASSWORD_LEN:
-            raise ValidationError(
-                f"A senha deve ter ao menos {self.cfg.MIN_PASSWORD_LEN} caracteres"
-            )
-        user_id = self.provider.create_user(email, password)  # Conflict se duplicado
-        self.profiles.create(user_id, (nome or "").strip())
-        return user_id
-
-    def deactivate_user(self, master_password, email) -> None:
-        self._check_master(master_password)
-        email = (email or "").strip().lower()
-        user_id = self.provider.find_user_id(email)
-        if not user_id:
-            # Não revela existência; trata como ok silencioso.
-            return
-        self.profiles.set_active(user_id, False)
-
     # ── Login / sessão ──────────────────────────────────────────────────
     def login(self, email, password) -> str:
-        email = (email or "").strip().lower()
+        email = normalize_email(email)
         if not email or not password:
             raise ValidationError("Informe e-mail e senha")
         if self.rate_limiter.is_locked(email):
+            from services.errors import RateLimited
             raise RateLimited()
         try:
             user_id = self.provider.authenticate(email, password)
         except Unauthorized:
             self.rate_limiter.register_failure(email)
             raise
-        if not self.profiles.is_active(user_id):  # AUTH-26
+        if not self.profiles.is_active(user_id):  # AUTH-26 / ADM-24
             self.rate_limiter.register_failure(email)
             raise Unauthorized()
         self.rate_limiter.reset(email)
-        return self._open_session(user_id)
+        return self.open_session(user_id)
 
-    def _open_session(self, user_id: str) -> str:
+    def open_session(self, user_id: str) -> str:
         token = secrets.token_urlsafe(32)
         expires = datetime.now(timezone.utc) + timedelta(hours=self.cfg.SESSION_TTL_HOURS)
         self.sessions.create(token, user_id, expires)
@@ -88,3 +58,24 @@ class AuthService:
         if not token:
             return None
         return self.sessions.get_user_id(token)
+
+    # ── Troca de senha pelo próprio usuário (UC-08 / ADM-37..44) ────────
+    def change_password(self, user_id, current, new, confirm) -> None:
+        # Validações locais ANTES de qualquer chamada ao Supabase (ADM-39).
+        if new != confirm:
+            raise ValidationError("A nova senha e a confirmação não coincidem")
+        if current and new == current:
+            raise ValidationError("A nova senha deve ser diferente da atual")  # ADM-40
+        validate_strength(new, self.cfg.MIN_PASSWORD_LEN)  # ADM-41
+
+        email = self.provider.get_email(user_id)
+        if not email:
+            raise Unauthorized()
+        # Verifica a senha atual (ADM-38).
+        try:
+            self.provider.authenticate(email, current)
+        except Unauthorized:
+            raise Unauthorized()
+
+        self.provider.update_password(user_id, new)
+        self.sessions.delete_by_user(user_id)  # invalida todas as sessões (ADM-42)

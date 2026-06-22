@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AgileMind · Primeiro acesso</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#08090d;--card:#101320;--elev:#141826;--border:rgba(255,255,255,.12);
+  --text:#dde3f0;--muted:#7a87a0;--accent:#00c896;--red:#ff5c5c;--orange:#ff7a45}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{width:400px;max-width:92vw;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:30px 26px}
+h1{font-size:19px;font-weight:700;margin-bottom:4px;background:linear-gradient(135deg,#00c896,#3d8eff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.sub{font-size:12.5px;color:var(--muted);margin-bottom:18px;line-height:1.5}
+label{display:block;font-size:12px;color:var(--muted);margin:12px 0 5px}
+input{width:100%;background:var(--elev);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;font-family:inherit;outline:none}
+input:focus{border-color:var(--accent)}
+.master{border:1px solid rgba(255,122,69,.3);background:rgba(255,122,69,.06);border-radius:8px;padding:4px 10px 10px;margin-bottom:6px}
+.master label{color:var(--orange)}
+button{width:100%;margin-top:18px;background:var(--accent);color:#04130d;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+button:disabled{opacity:.5}
+.msg{display:none;margin-top:14px;font-size:12.5px;border-radius:8px;padding:9px 11px;text-align:center}
+.msg.ok{display:block;background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.3);color:var(--accent)}
+.msg.err{display:block;background:rgba(255,92,92,.08);border:1px solid rgba(255,92,92,.3);color:var(--red)}
+.foot{margin-top:16px;text-align:center;font-size:11px;color:#404c64}
+.foot a{color:var(--muted)}
+</style>
+</head>
+<body>
+  <form class="card" id="f">
+    <h1>Primeiro acesso</h1>
+    <div class="sub">Crie o primeiro administrador do sistema. Isto só funciona uma vez, enquanto não houver nenhum admin. Use a <b>senha master</b> (do servidor).</div>
+    <div class="master">
+      <label>Senha master</label>
+      <input id="master" type="password" autocomplete="off"/>
+    </div>
+    <label>E-mail do admin</label>
+    <input id="email" type="email" placeholder="admin@empresa.com"/>
+    <label>Nome</label>
+    <input id="nome" type="text" placeholder="Seu nome"/>
+    <label>Senha (mín. 8)</label>
+    <input id="password" type="text" placeholder="senha do admin"/>
+    <button id="btn" type="submit">Criar administrador</button>
+    <div class="msg" id="msg"></div>
+    <div class="foot"><a href="/login">← ir para o login</a></div>
+  </form>
+<script>
+const $=id=>document.getElementById(id);
+$('f').addEventListener('submit',async e=>{
+  e.preventDefault(); const msg=$('msg'); $('btn').disabled=true;
+  const r=await fetch('/admin/bootstrap',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({master_password:$('master').value,email:$('email').value.trim(),nome:$('nome').value.trim(),password:$('password').value})});
+  const d=await r.json().catch(()=>({}));
+  if(r.ok){msg.className='msg ok';msg.textContent='✓ Admin criado! Redirecionando para o login...';setTimeout(()=>location.href='/login',1500);}
+  else{msg.className='msg err';msg.textContent=d.error||('Erro '+r.status);$('btn').disabled=false;}
+});
+</script>
+</body>
+</html>

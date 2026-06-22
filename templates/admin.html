@@ -3,132 +3,227 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>AgileMind · Administração</title>
+<title>AgileMind · Painel de Administração</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg-base:#08090d;--bg-card:#101320;--bg-elevated:#141826;
-  --border:rgba(255,255,255,.10);--text:#dde3f0;--muted:#7a87a0;--dim:#404c64;
-  --accent:#00c896;--accent-glow:rgba(0,200,150,.20);--red:#ff5c5c;--orange:#ff7a45;
+  --bg:#08090d;--surface:#0c0e15;--card:#101320;--elev:#141826;--hover:#1a1f30;
+  --border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.14);
+  --text:#dde3f0;--muted:#7a87a0;--dim:#404c64;
+  --accent:#00c896;--accent-bg:rgba(0,200,150,.08);--blue:#3d8eff;--red:#ff5c5c;
+  --yellow:#ffc44d;--orange:#ff7a45;
 }
-html,body{min-height:100%}
-body{
-  font-family:'DM Sans',system-ui,sans-serif;background:var(--bg-base);color:var(--text);
-  display:flex;flex-direction:column;align-items:center;padding:48px 16px;min-height:100vh;
-  background-image:linear-gradient(rgba(0,200,150,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,150,.03) 1px,transparent 1px);
-  background-size:40px 40px;
-}
-.brand{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:8px}
-.brand h1{font-size:20px;font-weight:700;letter-spacing:-.02em;
+html,body{height:100%}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+.wrap{display:grid;grid-template-columns:220px 1fr;height:100vh}
+/* sidebar */
+.side{background:var(--surface);border-right:1px solid var(--border);padding:18px 14px;display:flex;flex-direction:column;gap:6px}
+.brand{font-weight:700;font-size:16px;letter-spacing:-.02em;margin-bottom:6px;
   background:linear-gradient(135deg,#00c896,#3d8eff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.brand p{font-size:12px;color:var(--muted)}
-.master{
-  width:420px;max-width:92vw;margin:18px 0;background:rgba(255,122,69,.06);
-  border:1px solid rgba(255,122,69,.25);border-radius:12px;padding:14px 16px;
-}
-.master label{font-size:11px;color:var(--orange);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
-.card{
-  width:420px;max-width:92vw;background:var(--bg-card);border:1px solid var(--border);
-  border-radius:16px;padding:22px 22px;margin-top:16px;
-}
-.card h2{font-size:15px;font-weight:600;margin-bottom:4px}
-.card .sub{font-size:12px;color:var(--muted);margin-bottom:14px}
-label{display:block;font-size:12px;color:var(--muted);margin:12px 0 6px}
-input{
-  width:100%;background:var(--bg-elevated);border:1px solid var(--border);border-radius:9px;
-  padding:10px 12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color .2s;
-}
-input:focus{border-color:var(--accent)}
-button{
-  width:100%;margin-top:18px;border:none;border-radius:9px;padding:11px;font-size:14px;font-weight:600;
-  cursor:pointer;font-family:inherit;transition:opacity .2s,transform .1s;
-}
-button:hover{opacity:.9}button:active{transform:scale(.98)}button:disabled{opacity:.5;cursor:not-allowed}
-.btn-create{background:var(--accent);color:#050f0a}
-.btn-deactivate{background:transparent;border:1px solid rgba(255,92,92,.4);color:var(--red)}
-.msg{display:none;margin-top:14px;font-size:12.5px;border-radius:8px;padding:9px 11px;text-align:center}
-.msg.ok{display:block;background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.3);color:var(--accent)}
-.msg.err{display:block;background:rgba(255,92,92,.08);border:1px solid rgba(255,92,92,.3);color:var(--red)}
-.foot{margin-top:22px;font-size:11px;color:var(--dim)}
-.foot a{color:var(--muted);text-decoration:underline}
+.brand small{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);-webkit-text-fill-color:var(--muted)}
+.tab{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;color:var(--muted);cursor:pointer;font-size:13px;font-weight:500;border:1px solid transparent}
+.tab:hover{background:var(--hover);color:var(--text)}
+.tab.active{background:var(--accent-bg);color:var(--accent);border-color:rgba(0,200,150,.25)}
+.side .spacer{flex:1}
+.side a.back{color:var(--muted);font-size:12px;text-decoration:none;padding:9px 11px;border-radius:9px}
+.side a.back:hover{background:var(--hover);color:var(--text)}
+/* main */
+.main{overflow-y:auto;padding:28px 32px}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.head h1{font-size:19px;font-weight:600}
+.panel{display:none}.panel.active{display:block}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:8px;font-weight:600;font-size:12.5px;padding:8px 13px;transition:opacity .15s}
+button:hover{opacity:.88}
+.btn-primary{background:var(--accent);color:#04130d}
+.btn-ghost{background:var(--elev);color:var(--text);border:1px solid var(--border2)}
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+th{text-align:left;color:var(--muted);font-weight:600;padding:9px 10px;border-bottom:1px solid var(--border2);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+td{padding:9px 10px;border-bottom:1px solid var(--border)}
+tr:hover td{background:var(--card)}
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10.5px;font-weight:600}
+.badge.admin{background:rgba(61,142,255,.12);color:var(--blue)}
+.badge.user{background:rgba(122,135,160,.12);color:var(--muted)}
+.badge.on{background:var(--accent-bg);color:var(--accent)}
+.badge.off{background:rgba(255,92,92,.1);color:var(--red)}
+.row-actions{display:flex;gap:5px;flex-wrap:wrap}
+.mini{padding:4px 8px;font-size:11px;font-weight:500;background:var(--elev);color:var(--muted);border:1px solid var(--border)}
+.mini:hover{color:var(--text);border-color:var(--border2)}
+.mini.danger:hover{color:var(--red);border-color:rgba(255,92,92,.4)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;max-width:520px;margin-bottom:16px}
+.card h3{font-size:14px;margin-bottom:4px}.card .sub{font-size:12px;color:var(--muted);margin-bottom:12px}
+label{display:block;font-size:11.5px;color:var(--muted);margin:10px 0 5px}
+input,select{width:100%;background:var(--elev);border:1px solid var(--border2);border-radius:8px;padding:9px 11px;color:var(--text);font-size:13px;font-family:inherit;outline:none}
+input:focus,select:focus{border-color:var(--accent)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.toast{position:fixed;bottom:22px;right:22px;background:var(--elev);border:1px solid var(--border2);border-radius:10px;padding:12px 16px;font-size:13px;max-width:380px;box-shadow:0 12px 40px rgba(0,0,0,.5);display:none;z-index:50}
+.toast.show{display:block}.toast.ok{border-color:rgba(0,200,150,.4)}.toast.err{border-color:rgba(255,92,92,.4);color:var(--red)}
+.toast code{font-family:'JetBrains Mono',monospace;background:var(--bg);padding:2px 6px;border-radius:4px;color:var(--accent)}
+.mono{font-family:'JetBrains Mono',monospace}
+.empty{color:var(--muted);font-size:13px;padding:20px 0}
 </style>
 </head>
 <body>
-  <div class="brand">
-    <h1>AgileMind · Administração</h1>
-    <p>Gestão de usuários · requer senha master</p>
-  </div>
+<div class="wrap">
+  <aside class="side">
+    <div class="brand">AgileMind<small>Administração</small></div>
+    <div class="tab active" data-tab="users">👥 Usuários</div>
+    <div class="tab" data-tab="model">🧠 Modelo de IA</div>
+    <div class="tab" data-tab="audit">📜 Auditoria</div>
+    <div class="spacer"></div>
+    <a class="back" href="/">← voltar ao app</a>
+  </aside>
 
-  <div class="master">
-    <label for="master">Senha master</label>
-    <input id="master" type="password" placeholder="••••••••" autocomplete="off"/>
-  </div>
+  <main class="main">
+    <!-- USERS -->
+    <section class="panel active" id="panel-users">
+      <div class="head"><h1>Usuários</h1><button class="btn-primary" id="btnNew">+ Novo usuário</button></div>
+      <div class="card" id="newUserCard" style="display:none">
+        <h3>Criar usuário</h3>
+        <div class="grid2">
+          <div><label>E-mail</label><input id="nu_email" type="email" placeholder="pessoa@empresa.com"/></div>
+          <div><label>Nome</label><input id="nu_nome" type="text" placeholder="Nome"/></div>
+        </div>
+        <div class="grid2">
+          <div><label>Papel</label><select id="nu_role"><option value="user">user</option><option value="admin">admin</option></select></div>
+          <div><label>Senha (vazio = gerar)</label><input id="nu_pass" type="text" placeholder="deixe vazio para gerar"/></div>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:8px">
+          <button class="btn-primary" id="nu_create">Criar</button>
+          <button class="btn-ghost" id="nu_cancel">Cancelar</button>
+        </div>
+      </div>
+      <table><thead><tr><th>E-mail</th><th>Nome</th><th>Papel</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="usersBody"><tr><td colspan="5" class="empty">Carregando...</td></tr></tbody>
+      </table>
+    </section>
 
-  <!-- Criar usuário -->
-  <div class="card">
-    <h2>Criar usuário</h2>
-    <div class="sub">O novo usuário poderá fazer login com e-mail e senha.</div>
-    <label for="c_email">E-mail</label>
-    <input id="c_email" type="email" placeholder="pessoa@empresa.com"/>
-    <label for="c_nome">Nome</label>
-    <input id="c_nome" type="text" placeholder="Nome da pessoa"/>
-    <label for="c_pass">Senha (mín. 6 caracteres)</label>
-    <input id="c_pass" type="text" placeholder="senha123"/>
-    <button class="btn-create" id="btnCreate">Criar usuário</button>
-    <div class="msg" id="createMsg"></div>
-  </div>
+    <!-- MODEL -->
+    <section class="panel" id="panel-model">
+      <div class="head"><h1>Modelo de IA</h1></div>
+      <div class="card">
+        <h3>Modelos ativos</h3>
+        <div class="sub">Alterados em runtime, sem reiniciar o servidor. Validados no provider ao salvar.</div>
+        <label>Modelo de chat (Claude)</label>
+        <div style="display:flex;gap:8px"><input id="m_claude" class="mono"/><button class="btn-ghost" onclick="saveModel('claude','m_claude')">Salvar</button></div>
+        <label>Modelo de embeddings (Voyage)</label>
+        <div style="display:flex;gap:8px"><input id="m_voyage" class="mono"/><button class="btn-ghost" onclick="saveModel('voyage','m_voyage')">Salvar</button></div>
+      </div>
+    </section>
 
-  <!-- Desativar usuário -->
-  <div class="card">
-    <h2>Desativar usuário</h2>
-    <div class="sub">Impede o login. Não apaga dados.</div>
-    <label for="d_email">E-mail</label>
-    <input id="d_email" type="email" placeholder="pessoa@empresa.com"/>
-    <button class="btn-deactivate" id="btnDeactivate">Desativar acesso</button>
-    <div class="msg" id="deactivateMsg"></div>
-  </div>
-
-  <div class="foot"><a href="/login">← voltar para o login</a></div>
+    <!-- AUDIT -->
+    <section class="panel" id="panel-audit">
+      <div class="head"><h1>Auditoria <span style="font-size:12px;color:var(--muted);font-weight:400">(somente leitura)</span></h1></div>
+      <table><thead><tr><th>Quando</th><th>Ator</th><th>Ação</th><th>Alvo</th><th>Detalhes</th></tr></thead>
+        <tbody id="auditBody"><tr><td colspan="5" class="empty">Carregando...</td></tr></tbody>
+      </table>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
 
 <script>
-const master = document.getElementById('master');
-
-async function call(url, body, btn, msgEl, okText) {
-  if (!master.value) { show(msgEl, 'err', 'Informe a senha master.'); return; }
-  btn.disabled = true;
-  const original = btn.textContent; btn.textContent = 'Processando...';
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ master_password: master.value, ...body }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) show(msgEl, 'ok', okText);
-    else show(msgEl, 'err', data.error || 'Erro (HTTP ' + res.status + ')');
-  } catch {
-    show(msgEl, 'err', 'Falha de conexão.');
-  }
-  btn.disabled = false; btn.textContent = original;
+const $ = id => document.getElementById(id);
+function toast(kind, html){const t=$('toast');t.className='toast show '+kind;t.innerHTML=html;clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),kind==='ok'?4000:6000);}
+async function api(method, url, body){
+  const o={method,headers:{}};
+  if(body){o.headers['Content-Type']='application/json';o.body=JSON.stringify(body);}
+  const r=await fetch(url,o); let d={}; try{d=await r.json()}catch{}
+  return {ok:r.ok,status:r.status,data:d};
 }
-function show(el, kind, text){ el.className = 'msg ' + kind; el.textContent = text; }
 
-document.getElementById('btnCreate').addEventListener('click', () => {
-  call('/admin/create-user', {
-    email: document.getElementById('c_email').value.trim(),
-    nome: document.getElementById('c_nome').value.trim(),
-    password: document.getElementById('c_pass').value,
-  }, document.getElementById('btnCreate'), document.getElementById('createMsg'),
-  '✓ Usuário criado. Já pode fazer login.');
-});
+// Tabs
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active'); $('panel-'+t.dataset.tab).classList.add('active');
+  if(t.dataset.tab==='model') loadModel(); if(t.dataset.tab==='audit') loadAudit();
+}));
 
-document.getElementById('btnDeactivate').addEventListener('click', () => {
-  call('/admin/deactivate-user', {
-    email: document.getElementById('d_email').value.trim(),
-  }, document.getElementById('btnDeactivate'), document.getElementById('deactivateMsg'),
-  '✓ Acesso desativado.');
-});
+// Users
+async function loadUsers(){
+  const {data}=await api('GET','/admin/users');
+  const tb=$('usersBody'); const us=data.users||[];
+  if(!us.length){tb.innerHTML='<tr><td colspan="5" class="empty">Nenhum usuário.</td></tr>';return;}
+  tb.innerHTML=us.map(u=>{
+    const active=u.is_active;
+    return `<tr>
+      <td>${u.email||'—'}</td><td>${u.nome||'—'}</td>
+      <td><span class="badge ${u.role}">${u.role}</span></td>
+      <td><span class="badge ${active?'on':'off'}">${active?'ativo':'desativado'}</span></td>
+      <td><div class="row-actions">
+        <button class="mini" onclick="editUser('${u.user_id}','${u.nome||''}')">editar</button>
+        <button class="mini" onclick="resetPwd('${u.user_id}')">resetar senha</button>
+        <button class="mini" onclick="toggleRole('${u.user_id}','${u.role}')">${u.role==='admin'?'revogar admin':'tornar admin'}</button>
+        <button class="mini" onclick="toggleActive('${u.user_id}',${active})">${active?'desativar':'reativar'}</button>
+        <button class="mini danger" onclick="delUser('${u.user_id}')">excluir</button>
+      </div></td></tr>`;
+  }).join('');
+}
+$('btnNew').onclick=()=>$('newUserCard').style.display='block';
+$('nu_cancel').onclick=()=>$('newUserCard').style.display='none';
+$('nu_create').onclick=async()=>{
+  const body={email:$('nu_email').value.trim(),nome:$('nu_nome').value.trim(),role:$('nu_role').value};
+  const pass=$('nu_pass').value; if(pass) body.password=pass; else body.generate=true;
+  const r=await api('POST','/admin/users',body);
+  if(r.ok){ $('newUserCard').style.display='none';['nu_email','nu_nome','nu_pass'].forEach(i=>$(i).value='');
+    if(r.data.password) toast('ok',`Usuário criado. Senha (anote, só aparece agora): <code>${r.data.password}</code>`);
+    else toast('ok','Usuário criado.'); loadUsers();
+  } else toast('err',r.data.error||('Erro '+r.status));
+};
+async function editUser(id,nome){
+  const nv=prompt('Novo nome:',nome); if(nv===null)return;
+  const em=prompt('Novo e-mail (vazio = manter):','');
+  const body={nome:nv}; if(em) body.email=em;
+  const r=await api('PATCH','/admin/users/'+id,body);
+  r.ok?(toast('ok','Atualizado.'),loadUsers()):toast('err',r.data.error);
+}
+async function resetPwd(id){
+  const p=prompt('Nova senha (vazio = gerar aleatória):',''); if(p===null)return;
+  const body=p?{password:p}:{generate:true};
+  const r=await api('POST','/admin/users/'+id+'/reset-password',body);
+  if(r.ok){ r.data.password?toast('ok',`Nova senha (anote): <code>${r.data.password}</code>`):toast('ok','Senha redefinida.'); }
+  else toast('err',r.data.error);
+}
+async function toggleRole(id,role){
+  const novo=role==='admin'?'user':'admin';
+  const r=await api('POST','/admin/users/'+id+'/role',{role:novo});
+  r.ok?(toast('ok','Papel alterado.'),loadUsers()):toast('err',r.data.error);
+}
+async function toggleActive(id,active){
+  const r=await api('POST','/admin/users/'+id+(active?'/deactivate':'/reactivate'));
+  r.ok?(toast('ok',active?'Desativado.':'Reativado.'),loadUsers()):toast('err',r.data.error);
+}
+async function delUser(id){
+  if(!confirm('Excluir este usuário definitivamente?'))return;
+  const r=await api('DELETE','/admin/users/'+id);
+  r.ok?(toast('ok','Excluído.'),loadUsers()):toast('err',r.data.error);
+}
+
+// Model
+async function loadModel(){
+  const {data}=await api('GET','/admin/model');
+  $('m_claude').value=data.claude_model||''; $('m_voyage').value=data.voyage_model||'';
+}
+async function saveModel(kind,inputId){
+  const r=await api('PUT','/admin/model',{kind,model_id:$(inputId).value.trim()});
+  r.ok?toast('ok','Modelo salvo.'):toast('err',r.data.error||'Modelo inválido.');
+}
+
+// Audit
+async function loadAudit(){
+  const {data}=await api('GET','/admin/audit');
+  const tb=$('auditBody'); const es=data.entries||[];
+  if(!es.length){tb.innerHTML='<tr><td colspan="5" class="empty">Sem registros.</td></tr>';return;}
+  tb.innerHTML=es.map(e=>`<tr>
+    <td class="mono" style="font-size:11px">${(e.created_at||'').replace('T',' ').slice(0,19)}</td>
+    <td class="mono" style="font-size:11px">${(e.actor_user_id||'—').slice(0,8)}</td>
+    <td>${e.action}</td>
+    <td class="mono" style="font-size:11px">${(e.target_user_id||'—').slice(0,8)}</td>
+    <td class="mono" style="font-size:11px">${e.details?JSON.stringify(e.details):'—'}</td></tr>`).join('');
+}
+
+loadUsers();
 </script>
 </body>
 </html>

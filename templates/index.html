@@ -852,6 +852,8 @@ html, body {
       Limpar
     </button>
     <div class="header-author">by Júlio Cesar</div>
+    <a class="btn-clear hidden" id="lnkAdmin" href="/admin" title="Painel de administração" style="margin-left:10px;text-decoration:none">⚙️ Admin</a>
+    <button class="btn-clear" id="btnChangePwd" title="Trocar senha" style="margin-left:10px">🔑 Senha</button>
     <button class="btn-clear" id="btnLogout" title="Sair" style="margin-left:10px">
       <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
         <path d="M5.5 12.5H2.5A1 1 0 0 1 1.5 11.5V2.5A1 1 0 0 1 2.5 1.5H5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
@@ -1535,8 +1537,36 @@ document.getElementById('btnLogout').addEventListener('click', async () => {
   window.location.href = '/login';
 });
 
+// Mostra o link de Admin só para administradores (role do /me)
+async function checkRole() {
+  try {
+    const r = await fetch('/me');
+    if (r.ok) {
+      const me = await r.json();
+      if (me.role === 'admin') document.getElementById('lnkAdmin').classList.remove('hidden');
+    }
+  } catch {}
+}
+
+// Trocar senha (prompt simples)
+document.getElementById('btnChangePwd').addEventListener('click', async () => {
+  const cur = prompt('Senha atual:'); if (cur === null) return;
+  const nova = prompt('Nova senha (mín. 8):'); if (nova === null) return;
+  const conf = prompt('Confirme a nova senha:'); if (conf === null) return;
+  try {
+    const r = await fetch('/account/change-password', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ current_password: cur, new_password: nova, confirm_password: conf }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok) { alert('Senha alterada! Você será deslogado por segurança.'); window.location.href = '/login'; }
+    else alert('Erro: ' + (d.error || r.status));
+  } catch { alert('Falha de conexão.'); }
+});
+
 (async function init() {
   setStatus('', 'Aguardando report');
+  checkRole();
   await loadReportsList(true);
 })();
 </script>

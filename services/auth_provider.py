@@ -28,6 +28,13 @@ class AuthProvider(Protocol):
         """user_id pelo e-mail, ou None se não existe."""
         ...
 
+    def get_email(self, user_id: str) -> str | None: ...
+    def update_password(self, user_id: str, new_password: str) -> None: ...
+    def update_email(self, user_id: str, new_email: str) -> None: ...
+    def list_users(self) -> list[dict]:
+        """Lista [{id, email}] de todos os usuários do Auth."""
+        ...
+
 
 class SupabaseAuthProvider:
     def __init__(self, client, url: str, key: str):
@@ -75,11 +82,31 @@ class SupabaseAuthProvider:
 
     def find_user_id(self, email: str) -> str | None:
         email = email.strip().lower()
-        try:
-            users = self._sb.auth.admin.list_users()
-        except Exception:
-            return None
-        for u in users:
+        for u in self._raw_users():
             if (getattr(u, "email", "") or "").lower() == email:
                 return u.id
         return None
+
+    def _raw_users(self):
+        try:
+            return self._sb.auth.admin.list_users()
+        except Exception:
+            return []
+
+    def get_email(self, user_id: str) -> str | None:
+        try:
+            res = self._sb.auth.admin.get_user_by_id(user_id)
+            return getattr(res.user, "email", None)
+        except Exception:
+            return None
+
+    def update_password(self, user_id: str, new_password: str) -> None:
+        self._sb.auth.admin.update_user_by_id(user_id, {"password": new_password})
+
+    def update_email(self, user_id: str, new_email: str) -> None:
+        self._sb.auth.admin.update_user_by_id(
+            user_id, {"email": new_email, "email_confirm": True}
+        )
+
+    def list_users(self) -> list[dict]:
+        return [{"id": u.id, "email": getattr(u, "email", None)} for u in self._raw_users()]

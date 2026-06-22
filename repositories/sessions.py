@@ -20,6 +20,7 @@ class SessionsRepo(Protocol):
         """Retorna user_id se a sessão existe e não expirou; senão None."""
         ...
     def delete(self, token: str) -> None: ...
+    def delete_by_user(self, user_id: str) -> None: ...
 
 
 class SupabaseSessionsRepo:
@@ -54,3 +55,6 @@ class SupabaseSessionsRepo:
 
     def delete(self, token: str) -> None:
         self._sb.table("sessions").delete().eq("token", token).execute()
+
+    def delete_by_user(self, user_id: str) -> None:
+        self._sb.table("sessions").delete().eq("user_id", user_id).execute()

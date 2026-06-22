@@ -43,10 +43,12 @@ def create_app(config: Config | None = None, container=None) -> Flask:
     def _on_domain_error(e: DomainError):
         return jsonify({"error": e.message}), e.status
 
+    from admin.routes import bp as admin_bp
     from auth.routes import bp as auth_bp
     from routes.legacy import bp as legacy_bp
 
     app.register_blueprint(auth_bp)
+    app.register_blueprint(admin_bp)
     app.register_blueprint(legacy_bp)
     return app
 

@@ -29,10 +29,15 @@ class Config:
     SESSION_COOKIE: str = "agilemind_session"
     SESSION_TTL_HOURS: int = 12
 
-    # Regras de login (AUTH-06 / AUTH-15)
-    MIN_PASSWORD_LEN: int = 6
+    # Regras de senha / login
+    MIN_PASSWORD_LEN: int = 8          # ADM-41
+    GENERATED_PASSWORD_LEN: int = 16   # ADM-15/23
     LOGIN_MAX_ATTEMPTS: int = 5
     LOGIN_LOCKOUT_MINUTES: int = 15
+
+    # Modelos de IA (fallback quando app_config está vazio — ADM-36)
+    DEFAULT_CLAUDE_MODEL: str = "claude-sonnet-4-5"
+    DEFAULT_VOYAGE_MODEL: str = "voyage-3"
 
     def require_supabase(self) -> None:
         if not self.SUPABASE_URL or not self.SUPABASE_KEY:
