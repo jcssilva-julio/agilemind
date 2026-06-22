@@ -124,6 +124,13 @@ def test_auth_14_sem_self_signup_publico(client):
     assert client.post("/signup", json={}).status_code == 404
 
 
+def test_admin_page_renderiza(client):
+    # A página de admin carrega (a proteção real está no submit, via senha master).
+    r = client.get("/admin")
+    assert r.status_code == 200
+    assert b"Administra" in r.data
+
+
 def test_auth_15_rate_limiting_login(client, make_user):
     make_user(email="rl@x.com", password="senha123")
     for _ in range(5):

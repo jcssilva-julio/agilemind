@@ -83,6 +83,12 @@ def login_page():
     return render_template("login.html")
 
 
+@bp.get("/admin")
+def admin_page():
+    # Página pública para carregar; toda ação exige a senha master no submit.
+    return render_template("admin.html")
+
+
 @bp.get("/me")
 @login_required
 def me():
