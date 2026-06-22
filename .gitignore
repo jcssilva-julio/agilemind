@@ -1,0 +1,28 @@
+# ── Credenciais / segredos (NUNCA versionar) ──
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets.*
+
+# ── Ambiente virtual ──
+venv/
+.venv/
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# ── Dados gerados / de clientes (não versionar) ──
+uploads/*
+!uploads/.gitkeep
+indices/*
+!indices/.gitkeep
+
+# ── SO / editor ──
+.DS_Store
+.idea/
+.vscode/

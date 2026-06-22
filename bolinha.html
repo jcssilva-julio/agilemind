@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burndown Chart - Squad Phoenix Pay Q2/2025</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .chart-wrapper {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .chart-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #34495e;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .metrics {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .metric-row {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .metric-item {
+            flex: 1;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #27ae60;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Burndown Chart - Squad Phoenix Pay</h1>
+        <p class="subtitle">Q2 2025 · Sprints 18, 19 e 20 · Gerado pelo AgileMind</p>
+    </div>
+    <div class="metrics">
+        <h3 style="text-align: center; color: #2c3e50;">Métricas de Performance</h3>
+        <div class="metric-row">
+            <div class="metric-item">
+                <div class="metric-value">89.7%</div>
+                <div class="metric-label">Velocity Média Q2</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value">32.3</div>
+                <div class="metric-label">Story Points Entregues (média)</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value">2</div>
+                <div class="metric-label">Carried Over (média)</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value" style="color: #e74c3c;">-33%</div>
+                <div class="metric-label">Redução Dívida Técnica</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="charts-container">
+        <div class="chart-wrapper">
+            <div class="chart-title">Sprint 18 - Velocity: 82%</div>
+            <canvas id="burndown18"></canvas>
+        </div>
+        <div class="chart-wrapper">
+            <div class="chart-title">Sprint 19 - Velocity: 92%</div>
+            <canvas id="burndown19"></canvas>
+        </div>
+        <div class="chart-wrapper">
+            <div class="chart-title">Sprint 20 - Velocity: 95%</div>
+            <canvas id="burndown20"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Configuração comum dos gráficos
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        title: function(context) {
+                            return 'Dia ' + context[0].label;
+                        },
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y + ' pontos';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Story Points'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Dias da Sprint'
+                    }
+                }
+            }
+        };
+
+        // Dados Sprint 18
+        const sprint18Data = {
+            labels: ['D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9', 'D10'],
+            datasets: [
+                {
+                    label: 'Ideal',
+                    data: [34, 30.6, 27.2, 23.8, 20.4, 17.0, 13.6, 10.2, 6.8, 3.4, 0],
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    tension: 0.1
+                },
+                {
+                    label: 'Real',
+                    data: [34, 34, 31, 29, 26, 22, 19, 15, 11, 7, 6],
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.1,
+                    fill: true
+                }
+            ]
+        };
+
+        // Dados Sprint 19
+        const sprint19Data = {
+            labels: ['D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9', 'D10'],
+            datasets: [
+                {
+                    label: 'Ideal',
+                    data: [36, 32.4, 28.8, 25.2, 21.6, 18.0, 14.4, 10.8, 7.2, 3.6, 0],
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    tension: 0.1
+                },
+                {
+                    label: 'Real',
+                    data: [36, 36, 32, 28, 22, 18, 15, 11, 7, 4, 3],
+                    borderColor: '#f39c12',
+                    backgroundColor: 'rgba(243, 156, 18, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.1,
+                    fill: true
+                }
+            ]
+        };
+
+        // Dados Sprint 20
+        const sprint20Data = {
+            labels: ['D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9', 'D10'],
+            datasets: [
+                {
+                    label: 'Ideal',
+                    data: [38, 34.2, 30.4, 26.6, 22.8, 19.0, 15.2, 11.4, 7.6, 3.8, 0],
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    tension: 0.1
+                },
+                {
+                    label: 'Real',
+                    data: [38, 38, 33, 28, 22, 18, 13, 9, 5, 2, 2],
+                    borderColor: '#27ae60',
+                    backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.1,
+                    fill: true
+                }
+            ]
+        };
+
+        // Criar os gráficos
+        new Chart(document.getElementById('burndown18'), {
+            type: 'line',
+            data: sprint18Data,
+            options: commonOptions
+        });
+
+        new Chart(document.getElementById('burndown19'), {
+            type: 'line',
+            data: sprint19Data,
+            options: commonOptions
+        });
+
+        new Chart(document.getElementById('burndown20'), {
+            type: 'line',
+            data: sprint20Data,
+            options: commonOptions
+        });
+    </script>
+</body>
+</html>
