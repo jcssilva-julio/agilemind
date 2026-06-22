@@ -38,7 +38,10 @@
       "Bash(curl -s -o /dev/null -w \"GET /login -> HTTP %{http_code} \\(tela de login\\)\\\\n\" http://127.0.0.1:5000/login)",
       "Bash(curl -s -o /dev/null -w \"GET /pdf/indices -> HTTP %{http_code} \\(protegido\\)\\\\n\" http://127.0.0.1:5000/pdf/indices)",
       "Bash(curl -s -o /dev/null -w \"POST /upload -> HTTP %{http_code} \\(protegido\\)\\\\n\" -X POST http://127.0.0.1:5000/upload)",
-      "Bash(curl -s -o /dev/null -X POST http://127.0.0.1:5000/admin/create-user -H 'Content-Type: application/json' -d '{\"master_password\":\"__TRACKED_VAR__\",\"email\":\"__TRACKED_VAR__\",\"password\":\"senha123\",\"nome\":\"Demo\"}')"
+      "Bash(curl -s -o /dev/null -X POST http://127.0.0.1:5000/admin/create-user -H 'Content-Type: application/json' -d '{\"master_password\":\"__TRACKED_VAR__\",\"email\":\"__TRACKED_VAR__\",\"password\":\"senha123\",\"nome\":\"Demo\"}')",
+      "Bash(curl -s -o /dev/null -w \"GET /login -> HTTP %{http_code}\\\\n\" http://127.0.0.1:5000/login)",
+      "Bash(curl -s -o /dev/null -w \"GET /admin/setup -> HTTP %{http_code}\\\\n\" http://127.0.0.1:5000/admin/setup)",
+      "Bash(git add *)"
     ],
     "additionalDirectories": [
       "/tmp"
