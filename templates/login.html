@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AgileMind · Entrar</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-base:#08090d;--bg-card:#101320;--bg-elevated:#141826;
+  --border:rgba(255,255,255,.10);--text:#dde3f0;--muted:#7a87a0;--dim:#404c64;
+  --accent:#00c896;--accent-glow:rgba(0,200,150,.20);--red:#ff5c5c;
+}
+html,body{height:100%}
+body{
+  font-family:'DM Sans',system-ui,sans-serif;background:var(--bg-base);color:var(--text);
+  display:flex;align-items:center;justify-content:center;min-height:100vh;
+  background-image:linear-gradient(rgba(0,200,150,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,150,.03) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.card{
+  width:360px;max-width:90vw;background:var(--bg-card);border:1px solid var(--border);
+  border-radius:18px;padding:32px 28px;box-shadow:0 20px 60px rgba(0,0,0,.4);
+}
+.brand{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:22px}
+.brand svg{filter:drop-shadow(0 0 16px var(--accent-glow))}
+.brand h1{
+  font-size:22px;font-weight:700;letter-spacing:-.02em;
+  background:linear-gradient(135deg,#00c896,#3d8eff);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text;
+}
+.brand p{font-size:12px;color:var(--muted)}
+label{display:block;font-size:12px;color:var(--muted);margin:14px 0 6px}
+input{
+  width:100%;background:var(--bg-elevated);border:1px solid var(--border);border-radius:9px;
+  padding:11px 12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color .2s;
+}
+input:focus{border-color:var(--accent)}
+button{
+  width:100%;margin-top:20px;background:var(--accent);color:#050f0a;border:none;border-radius:9px;
+  padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .2s,transform .1s;
+}
+button:hover{opacity:.9}button:active{transform:scale(.98)}
+button:disabled{opacity:.5;cursor:not-allowed}
+.err{display:none;margin-top:14px;background:rgba(255,92,92,.08);border:1px solid rgba(255,92,92,.3);
+  color:var(--red);font-size:12.5px;border-radius:8px;padding:9px 11px;text-align:center}
+.err.show{display:block}
+.foot{margin-top:18px;text-align:center;font-size:11px;color:var(--dim)}
+</style>
+</head>
+<body>
+  <form class="card" id="form">
+    <div class="brand">
+      <svg width="44" height="44" viewBox="0 0 34 34" fill="none">
+        <rect width="34" height="34" rx="9" fill="rgba(0,200,150,.12)"/>
+        <rect x="5" y="22" width="4" height="7" rx="1.5" fill="#00c896" opacity=".5"/>
+        <rect x="11" y="17" width="4" height="12" rx="1.5" fill="#00c896" opacity=".7"/>
+        <rect x="17" y="12" width="4" height="17" rx="1.5" fill="#00c896" opacity=".9"/>
+        <rect x="23" y="8" width="4" height="21" rx="1.5" fill="#00c896"/>
+        <path d="M7 8 L29 24" stroke="#00c896" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="3 2" opacity=".7"/>
+        <circle cx="7" cy="8" r="2.2" fill="#00c896"/>
+      </svg>
+      <h1>AgileMind</h1>
+      <p>Entre para acessar a análise de squads</p>
+    </div>
+
+    <label for="email">E-mail</label>
+    <input id="email" type="email" autocomplete="username" placeholder="voce@empresa.com" required/>
+
+    <label for="password">Senha</label>
+    <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" required/>
+
+    <button id="btn" type="submit">Entrar</button>
+    <div class="err" id="err"></div>
+    <div class="foot">Acesso restrito · usuários criados pelo administrador</div>
+  </form>
+
+<script>
+const form = document.getElementById('form');
+const btn = document.getElementById('btn');
+const err = document.getElementById('err');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  err.classList.remove('show');
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  try {
+    const res = await fetch('/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value,
+      }),
+    });
+    if (res.ok) {
+      window.location.href = '/';
+      return;
+    }
+    const data = await res.json().catch(() => ({}));
+    err.textContent = data.error || 'Não foi possível entrar.';
+    err.classList.add('show');
+  } catch {
+    err.textContent = 'Falha de conexão.';
+    err.classList.add('show');
+  }
+  btn.disabled = false; btn.textContent = 'Entrar';
+});
+</script>
+</body>
+</html>

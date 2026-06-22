@@ -24,7 +24,24 @@
       "Bash(gh auth *)",
       "Bash(./venv/bin/python -c \"import supabase; print\\('ok', supabase.__version__\\)\")",
       "Bash(./venv/bin/python -m pip install -q supabase)",
-      "Bash(./venv/bin/python -c \"import supabase; print\\('✅ supabase instalado:', supabase.__version__\\)\")"
+      "Bash(./venv/bin/python -c \"import supabase; print\\('✅ supabase instalado:', supabase.__version__\\)\")",
+      "Bash(./venv/bin/python -m pytest tests/test_auth.py tests/test_security.py -v)",
+      "Bash(pkill -f \"venv/bin/python app.py\")",
+      "Bash(echo \"PID $!\")",
+      "Bash(curl -s -o /dev/null -w \"GET / -> HTTP %{http_code}\\\\n\" http://127.0.0.1:5000/)",
+      "Bash(./venv/bin/python -c \"from dotenv import dotenv_values;print\\(dotenv_values\\('.env'\\)['MASTER_PASSWORD']\\)\")",
+      "Bash(curl -s -o /dev/null -w ' HTTP %{http_code}\\\\n' -X POST http://127.0.0.1:5000/admin/create-user -H 'Content-Type: application/json' -d '{\"email\":\"__TRACKED_VAR__\",\"password\":\"senha123\"}')",
+      "Bash(curl -s -o /dev/null -w ' HTTP %{http_code}\\\\n' -X POST http://127.0.0.1:5000/admin/create-user -H 'Content-Type: application/json' -d '{\"master_password\":\"errada\",\"email\":\"__TRACKED_VAR__\",\"password\":\"senha123\"}')",
+      "Bash(curl -s -w ' HTTP %{http_code}\\\\n' -X POST http://127.0.0.1:5000/admin/create-user -H 'Content-Type: application/json' -d '{\"master_password\":\"__TRACKED_VAR__\",\"email\":\"__TRACKED_VAR__\",\"password\":\"senha123\",\"nome\":\"Demo\"}')",
+      "Bash(curl -s -w ' HTTP %{http_code} | %{json}\\\\n' -o /dev/null -X POST http://127.0.0.1:5000/login -H 'Content-Type: application/json' -d '{\"email\":\"__TRACKED_VAR__\",\"password\":\"errada\"}')",
+      "Bash(curl -s -o /dev/null -w \"GET / -> HTTP %{http_code} \\(redirect p/ %{redirect_url}\\)\\\\n\" http://127.0.0.1:5000/)",
+      "Bash(curl -s -o /dev/null -w \"GET /login -> HTTP %{http_code} \\(tela de login\\)\\\\n\" http://127.0.0.1:5000/login)",
+      "Bash(curl -s -o /dev/null -w \"GET /pdf/indices -> HTTP %{http_code} \\(protegido\\)\\\\n\" http://127.0.0.1:5000/pdf/indices)",
+      "Bash(curl -s -o /dev/null -w \"POST /upload -> HTTP %{http_code} \\(protegido\\)\\\\n\" -X POST http://127.0.0.1:5000/upload)",
+      "Bash(curl -s -o /dev/null -X POST http://127.0.0.1:5000/admin/create-user -H 'Content-Type: application/json' -d '{\"master_password\":\"__TRACKED_VAR__\",\"email\":\"__TRACKED_VAR__\",\"password\":\"senha123\",\"nome\":\"Demo\"}')"
+    ],
+    "additionalDirectories": [
+      "/tmp"
     ]
   }
 }

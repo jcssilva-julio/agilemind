@@ -133,26 +133,71 @@ def test_auth_15_rate_limiting_login(client, make_user):
 
 
 # ─────────────────────────────────────────────────────────────────────
-# 3.3 Sessão e proteção de rotas — Fase 2
+# 3.3 Sessão e proteção de rotas
 # ─────────────────────────────────────────────────────────────────────
-@pytest.mark.skip(reason="Fase 2: proteção de rotas")
-def test_auth_16_upload_sem_auth(client): ...
-@pytest.mark.skip(reason="Fase 2: proteção de rotas")
-def test_auth_17_chat_sem_auth(client): ...
-@pytest.mark.skip(reason="Fase 2: proteção de rotas")
-def test_auth_18_pdf_indices_sem_auth(client): ...
-@pytest.mark.skip(reason="Fase 2: proteção de rotas")
-def test_auth_19_pdf_load_sem_auth(client): ...
-@pytest.mark.skip(reason="Fase 2: proteção de rotas")
-def test_auth_20_pdf_delete_sem_auth(client): ...
-@pytest.mark.skip(reason="Fase 2: proteção de rotas")
-def test_auth_21_index_sem_sessao_redireciona_login(client): ...
-@pytest.mark.skip(reason="Fase 2: proteção de rotas")
-def test_auth_22_sessao_expirada_rejeitada(client): ...
-@pytest.mark.skip(reason="Fase 2: proteção de rotas")
-def test_auth_23_logout_encerra_sessao(client): ...
-@pytest.mark.skip(reason="Fase 2: proteção de rotas")
-def test_auth_24_token_de_outro_usuario(client): ...
+def _session_token(resp):
+    for c in resp.headers.getlist("Set-Cookie"):
+        if c.startswith("agilemind_session="):
+            return c.split("=", 1)[1].split(";", 1)[0]
+    return None
+
+
+def test_auth_16_upload_sem_auth(client):
+    assert client.post("/upload").status_code == 401
+
+
+def test_auth_17_chat_sem_auth(client):
+    assert client.post("/chat", json={"question": "oi"}).status_code == 401
+
+
+def test_auth_18_pdf_indices_sem_auth(client):
+    assert client.get("/pdf/indices").status_code == 401
+
+
+def test_auth_19_pdf_load_sem_auth(client):
+    assert client.post("/pdf/load", json={"filename": "x"}).status_code == 401
+
+
+def test_auth_20_pdf_delete_sem_auth(client):
+    assert client.post("/pdf/delete", json={"filename": "x"}).status_code == 401
+
+
+def test_auth_21_index_sem_sessao_redireciona_login(client):
+    r = client.get("/")
+    assert r.status_code in (301, 302)
+    assert "/login" in r.headers["Location"]
+
+
+def test_auth_22_sessao_expirada_rejeitada(client, make_user, container):
+    from datetime import datetime, timedelta, timezone
+
+    u = make_user(email="exp@x.com", password="senha123")
+    client.post("/login", json={"email": u["email"], "password": "senha123"})
+    # Força a expiração no servidor.
+    past = datetime.now(timezone.utc) - timedelta(hours=1)
+    for tok in list(container.sessions._s):
+        container.sessions._s[tok]["expires_at"] = past
+    assert client.get("/me").status_code == 401
+
+
+def test_auth_23_logout_encerra_sessao(client, make_user):
+    u = make_user(email="lo@x.com", password="senha123")
+    r = client.post("/login", json={"email": u["email"], "password": "senha123"})
+    token = _session_token(r)
+    assert client.get("/me").status_code == 200
+    client.post("/logout")
+    # Reutilizar o MESMO token após logout deve falhar (invalidação server-side).
+    r2 = client.get("/me", headers={"Cookie": f"agilemind_session={token}"})
+    assert r2.status_code == 401
+
+
+def test_auth_24_token_de_outro_usuario(client, make_user):
+    a = make_user(email="a@x.com", password="senha123")
+    client.post("/login", json={"email": a["email"], "password": "senha123"})
+    # Mesmo enviando outro user_id no payload, a identidade vem do token.
+    r = client.get("/me", json={"user_id": "forjado-outro-usuario"})
+    assert r.status_code == 200
+    assert r.get_json()["user_id"] == a["user_id"]
 
 
 # ─────────────────────────────────────────────────────────────────────

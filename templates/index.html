@@ -852,6 +852,13 @@ html, body {
       Limpar
     </button>
     <div class="header-author">by Júlio Cesar</div>
+    <button class="btn-clear" id="btnLogout" title="Sair" style="margin-left:10px">
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+        <path d="M5.5 12.5H2.5A1 1 0 0 1 1.5 11.5V2.5A1 1 0 0 1 2.5 1.5H5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M9 9.5L12 7L9 4.5M12 7H5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Sair
+    </button>
   </header>
 
   <!-- ════ SIDEBAR ════ -->
@@ -1522,6 +1529,12 @@ document.querySelectorAll('.quick-prompt-btn').forEach(btn => {
 // ═══════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════
+// Logout: encerra a sessão no servidor e volta para a tela de login
+document.getElementById('btnLogout').addEventListener('click', async () => {
+  try { await fetch('/logout', { method: 'POST' }); } catch {}
+  window.location.href = '/login';
+});
+
 (async function init() {
   setStatus('', 'Aguardando report');
   await loadReportsList(true);

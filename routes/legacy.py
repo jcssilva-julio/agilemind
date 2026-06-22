@@ -12,13 +12,24 @@ import threading
 from pathlib import Path
 from typing import Dict, List
 
-from flask import Blueprint, Response, jsonify, render_template, request, stream_with_context
+from flask import (
+    Blueprint,
+    Response,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    stream_with_context,
+    url_for,
+)
 from werkzeug.utils import secure_filename
 
 import pdfplumber
 import numpy as np
 from anthropic import Anthropic
 import voyageai
+
+from auth.routes import current_user_id, login_required
 
 bp = Blueprint("legacy", __name__)
 
@@ -160,6 +171,7 @@ def is_agile_document(alias: str, chunks: List[str], ac) -> bool:
 
 
 @bp.route("/upload", methods=["POST"])
+@login_required
 def upload():
     if "file" not in request.files:
         return jsonify({"error": "Nenhum arquivo enviado"}), 400
@@ -225,6 +237,7 @@ def upload():
 
 
 @bp.route("/chat", methods=["POST"])
+@login_required
 def chat():
     data = request.get_json()
     question = (data or {}).get("question", "").strip()
@@ -265,6 +278,7 @@ def chat():
 
 
 @bp.route("/pdf/indices", methods=["GET"])
+@login_required
 def list_pdf_indices():
     indices = []
     for pkl in INDEX_FOLDER.glob("*.pkl"):
@@ -282,6 +296,7 @@ def list_pdf_indices():
 
 
 @bp.route("/pdf/load", methods=["POST"])
+@login_required
 def load_pdf_index():
     data = request.get_json()
     filename = (data or {}).get("filename", "")
@@ -302,6 +317,7 @@ def load_pdf_index():
 
 
 @bp.route("/pdf/delete", methods=["POST"])
+@login_required
 def delete_pdf_index():
     data = request.get_json()
     filename = (data or {}).get("filename", "")
@@ -322,4 +338,7 @@ def delete_pdf_index():
 
 @bp.route("/")
 def index():
+    # Sem sessão válida, vai para a tela de login (AUTH-21).
+    if not current_user_id():
+        return redirect(url_for("auth.login_page"))
     return render_template("index.html")

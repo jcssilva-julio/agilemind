@@ -8,9 +8,16 @@ from __future__ import annotations
 
 from functools import wraps
 
-from flask import Blueprint, current_app, g, jsonify, request
+from flask import (
+    Blueprint,
+    current_app,
+    g,
+    jsonify,
+    render_template,
+    request,
+)
 
-from services.errors import DomainError, Unauthorized
+from services.errors import DomainError
 
 bp = Blueprint("auth", __name__)
 
@@ -23,6 +30,12 @@ def _cfg():
     return current_app.config["CONTAINER"].config
 
 
+def current_user_id():
+    """user_id da sessão do cookie atual, ou None. Identidade vem SÓ do token."""
+    token = request.cookies.get(_cfg().SESSION_COOKIE)
+    return _svc().resolve(token)
+
+
 def _json():
     return request.get_json(silent=True) or {}
 
@@ -31,8 +44,7 @@ def login_required(view):
     """Exige sessão válida; injeta g.user_id. Caso contrário, 401."""
     @wraps(view)
     def wrapper(*args, **kwargs):
-        token = request.cookies.get(_cfg().SESSION_COOKIE)
-        user_id = _svc().resolve(token)
+        user_id = current_user_id()
         if not user_id:
             return jsonify({"error": "Não autenticado"}), 401
         g.user_id = user_id
@@ -61,6 +73,21 @@ def deactivate_user():
     d = _json()
     _svc().deactivate_user(d.get("master_password"), d.get("email"))
     return jsonify({"ok": True}), 200
+
+
+@bp.get("/login")
+def login_page():
+    # Se já está logado, manda direto pro app.
+    if current_user_id():
+        return current_app.redirect("/")
+    return render_template("login.html")
+
+
+@bp.get("/me")
+@login_required
+def me():
+    # Identidade vem do token da sessão (g.user_id), nunca do payload (AUTH-24).
+    return jsonify({"user_id": g.user_id})
 
 
 @bp.post("/login")
