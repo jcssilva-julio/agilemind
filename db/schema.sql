@@ -8,7 +8,8 @@ create table if not exists profiles (
   user_id    uuid primary key references auth.users(id) on delete cascade,
   nome       text,
   is_active  boolean not null default true,
-  created_by_master_at timestamptz not null default now()
+  created_at timestamptz not null default now()
+  -- role, created_by: adicionados na migração 002_admin.sql
 );
 
 -- Documentos: peça central das regras de visibilidade.

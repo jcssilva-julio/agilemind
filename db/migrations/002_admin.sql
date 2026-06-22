@@ -3,7 +3,8 @@
 -- Rode no SQL Editor do Supabase. Idempotente (IF NOT EXISTS / DO blocks).
 -- =====================================================================
 
--- profiles: papel (role) + autoria (created_by) ----------------------
+-- profiles: papel (role) + autoria (created_by) + data de criação --------
+alter table profiles add column if not exists created_at timestamptz not null default now();
 alter table profiles add column if not exists role text not null default 'user';
 do $$ begin
   if not exists (select 1 from pg_constraint where conname = 'profiles_role_check') then
