@@ -23,13 +23,14 @@ class SupabaseDocumentChunksRepo:
             "content": it["content"],
             "embedding": it["embedding"],
             "embedding_model": embedding_model,
+            "squad_name": it.get("squad_name"),
         } for it in items]
         # Insere em lotes para não estourar limites de payload.
         for i in range(0, len(rows), 200):
             self._sb.table("document_chunks").insert(rows[i:i + 200]).execute()
 
     def get_by_document(self, document_id) -> list[dict]:
-        res = (self._sb.table("document_chunks").select("content, embedding")
+        res = (self._sb.table("document_chunks").select("content, embedding, squad_name")
                .eq("document_id", document_id).order("chunk_index").execute())
         return res.data or []
 

@@ -6,11 +6,14 @@ from typing import Optional, Protocol
 
 class DocumentsRepo(Protocol):
     def create(self, owner_user_id: str, alias: str, filename: str,
-               storage_path: str, visibility: str) -> str: ...
+               storage_path: str, visibility: str,
+               document_type: str = "other_it_document") -> str: ...
     def get(self, doc_id: str) -> Optional[dict]: ...
     def delete(self, doc_id: str) -> None: ...
     def set_visibility(self, doc_id: str, visibility: str) -> None: ...
+    def set_type(self, doc_id: str, document_type: str) -> None: ...
     def list_visible_for(self, user_id: str) -> list[dict]: ...
+    def list_all(self) -> list[dict]: ...
     def count_by_owner(self, user_id: str) -> int: ...
 
 
@@ -18,10 +21,12 @@ class SupabaseDocumentsRepo:
     def __init__(self, client):
         self._sb = client
 
-    def create(self, owner_user_id, alias, filename, storage_path, visibility) -> str:
+    def create(self, owner_user_id, alias, filename, storage_path, visibility,
+               document_type="other_it_document") -> str:
         res = self._sb.table("documents").insert({
             "owner_user_id": owner_user_id, "alias": alias, "filename": filename,
             "storage_path": storage_path, "visibility": visibility,
+            "document_type": document_type,
         }).execute()
         return res.data[0]["id"]
 
@@ -34,6 +39,9 @@ class SupabaseDocumentsRepo:
 
     def set_visibility(self, doc_id, visibility) -> None:
         self._sb.table("documents").update({"visibility": visibility}).eq("id", doc_id).execute()
+
+    def set_type(self, doc_id, document_type) -> None:
+        self._sb.table("documents").update({"document_type": document_type}).eq("id", doc_id).execute()
 
     def list_visible_for(self, user_id) -> list[dict]:
         # Próprios (qualquer visibilidade) + públicos de qualquer dono.

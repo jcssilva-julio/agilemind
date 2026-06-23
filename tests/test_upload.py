@@ -29,7 +29,8 @@ def user_client(client, make_user, login):
 
 
 def _mock_text(monkeypatch, text):
-    monkeypatch.setattr("services.rag.extract_pdf_text", lambda d: text)
+    # O upload usa extract_pdf_pages (texto por página)
+    monkeypatch.setattr("services.rag.extract_pdf_pages", lambda d: [text])
 
 
 def test_up_01_pdf_agil_autenticado(user_client, container, monkeypatch):

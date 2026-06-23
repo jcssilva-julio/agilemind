@@ -66,7 +66,7 @@ def _upload(c, alias, visibility):
 
 def test_sec_05_fluxo_feliz_completo(app, master, monkeypatch):
     """Regressão E2E das regras das seções 3 a 6 em sequência."""
-    monkeypatch.setattr("services.rag.extract_pdf_text", lambda d: "sprint velocity burndown " * 40)
+    monkeypatch.setattr("services.rag.extract_pdf_pages", lambda d: ["sprint velocity burndown " * 40])
     ca = app.test_client()
 
     # 1) Admin via master (bootstrap) + login

@@ -1011,6 +1011,19 @@ html, body {
       <div class="reports-empty" id="reportsEmpty">Nenhum report indexado.<br>Faça upload de um PDF.</div>
     </div>
 
+    <!-- Tipo do documento ativo (correção manual) -->
+    <div class="sidebar-section" id="docTypeSection" style="display:none">
+      <div class="sidebar-section-title">Tipo do documento</div>
+      <select class="alias-input" id="docTypeSelect" style="width:100%">
+        <option value="squad_report_single">Report de squad (única)</option>
+        <option value="squad_report_multi">Report de múltiplas squads</option>
+        <option value="cv_resume">Currículo (CV)</option>
+        <option value="commercial_proposal">Proposta comercial</option>
+        <option value="other_it_document">Outro documento de TI</option>
+      </select>
+      <div style="font-size:10.5px;color:var(--text-muted);margin-top:5px">Corrija se a detecção automática errou.</div>
+    </div>
+
     <!-- Quick prompts -->
     <div class="sidebar-section prompts" style="margin-top: auto;">
       <div class="sidebar-section-title">Atalhos ágeis</div>
@@ -1254,8 +1267,8 @@ async function doUpload() {
           resetUploadZone();
           const newDocId = ev.document_id;
           await loadReportsList(false);
-          // Auto-activate the just-uploaded doc
-          if (newDocId) activateReport(newDocId, ev.alias);
+          // Auto-activate the just-uploaded doc (uploader é o dono)
+          if (newDocId) activateReport(newDocId, ev.alias, ev.document_type, true);
         } else if (ev.type === 'rejected') {
           progressFill.style.width = '100%';
           progressFill.style.background = 'var(--red)';
@@ -1349,14 +1362,23 @@ async function selectReport(documentId, alias) {
     });
     const data = await res.json();
     if (data.ok) {
-      activateReport(documentId, data.alias || alias);
+      activateReport(documentId, data.alias || alias, data.document_type, data.is_owner);
     }
   } catch {}
 }
 
-function activateReport(documentId, alias) {
+function activateReport(documentId, alias, documentType, isOwner) {
   activeDocumentId = documentId;
   activeAlias    = alias;
+
+  // Tipo do documento (correção manual, só para o dono)
+  const dtSection = document.getElementById('docTypeSection');
+  if (isOwner && documentType) {
+    document.getElementById('docTypeSelect').value = documentType;
+    dtSection.style.display = '';
+  } else {
+    dtSection.style.display = 'none';
+  }
 
   // Header badge
   headerDocName.textContent = alias;
@@ -1683,6 +1705,18 @@ function openSidebar() { sidebarEl.classList.add('open'); sidebarBackdrop.classL
 function closeSidebar() { sidebarEl.classList.remove('open'); sidebarBackdrop.classList.remove('show'); }
 document.getElementById('btnMenu').addEventListener('click', openSidebar);
 sidebarBackdrop.addEventListener('click', closeSidebar);
+
+// Correção manual do tipo de documento
+document.getElementById('docTypeSelect').addEventListener('change', async (e) => {
+  if (!activeDocumentId) return;
+  try {
+    const r = await fetch(`/pdf/${activeDocumentId}/type`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ document_type: e.target.value }),
+    });
+    if (!r.ok) { const d = await r.json().catch(() => ({})); alert('Erro: ' + (d.error || r.status)); }
+  } catch { alert('Falha de conexão.'); }
+});
 
 // Calcula as iniciais a partir do nome (ou e-mail)
 function initialsFrom(nome, email) {

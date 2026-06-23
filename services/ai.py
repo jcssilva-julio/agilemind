@@ -5,7 +5,7 @@ próximas chamadas sem reiniciar (ADM-33/34). Nos testes, injeta-se um fake.
 """
 from __future__ import annotations
 
-from services.rag import CLASSIFIER_PROMPT
+from services.rag import CLASSIFIER_PROMPT, DEFAULT_DOC_TYPE, DOC_TYPES, TYPE_CLASSIFIER_PROMPT
 
 
 class AIService:
@@ -44,6 +44,30 @@ class AIService:
             messages=[{"role": "user", "content": f"Nome: {alias}\n\nTrecho:\n{sample}"}],
         )
         return resp.content[0].text.strip().upper().startswith("YES")
+
+    def classify_type(self, alias: str, sample: str) -> str:
+        """Segunda camada: tipo do documento. Erro propaga (caller faz fallback)."""
+        model = self._models()["claude_model"]
+        resp = self._anthropic().messages.create(
+            model=model, max_tokens=15, system=TYPE_CLASSIFIER_PROMPT,
+            messages=[{"role": "user", "content": f"Nome: {alias}\n\nTrecho:\n{sample}"}],
+        )
+        answer = resp.content[0].text.strip().lower()
+        for t in DOC_TYPES:
+            if t in answer:
+                return t
+        return DEFAULT_DOC_TYPE
+
+    def identify_squad(self, text: str):
+        """Nome da squad descrita no trecho, ou None se não identificável."""
+        model = self._models()["claude_model"]
+        resp = self._anthropic().messages.create(
+            model=model, max_tokens=20,
+            system="Qual squad/time este trecho descreve? Responda APENAS o nome da squad, ou exatamente NONE se não houver uma squad claramente identificável.",
+            messages=[{"role": "user", "content": text[:3000]}],
+        )
+        name = resp.content[0].text.strip()
+        return None if name.upper().startswith("NONE") or not name else name
 
     def stream_chat(self, system: str, question: str):
         model = self._models()["claude_model"]

@@ -173,15 +173,21 @@ class FakeDocumentsRepo:
         self._seq = 0
         self.counts: dict[str, int] = {}  # override manual p/ ADM-26
 
-    def create(self, owner_user_id, alias, filename, storage_path, visibility):
+    def create(self, owner_user_id, alias, filename, storage_path, visibility,
+               document_type="other_it_document"):
         self._seq += 1
         did = f"doc-{self._seq}"
         self.docs[did] = {
             "id": did, "owner_user_id": owner_user_id, "alias": alias,
             "filename": filename, "storage_path": storage_path,
-            "visibility": visibility, "created_at": self._seq,
+            "visibility": visibility, "document_type": document_type,
+            "created_at": self._seq,
         }
         return did
+
+    def set_type(self, doc_id, document_type):
+        if doc_id in self.docs:
+            self.docs[doc_id]["document_type"] = document_type
 
     def get(self, doc_id):
         return self.docs.get(doc_id)
@@ -213,7 +219,8 @@ class FakeChunksRepo:
 
     def create_many(self, document_id, items, embedding_model):
         self.by_doc[document_id] = [
-            {"content": it["content"], "embedding": it["embedding"]} for it in items
+            {"content": it["content"], "embedding": it["embedding"],
+             "squad_name": it.get("squad_name")} for it in items
         ]
 
     def get_by_document(self, document_id):
@@ -248,6 +255,11 @@ class FakeAI:
         self.relevant = relevant
         self.raise_on_classify = raise_on_classify
         self.last_system = None  # último contexto usado (p/ provar isolamento)
+        # Classificação de tipo (segunda camada)
+        self.doc_type = "squad_report_single"
+        self.raise_on_classify_type = False
+        # identify_squad retorna a 1ª squad conhecida cujo nome aparece no trecho
+        self.known_squads = []
 
     def embed_documents(self, chunks):
         return [[float(len(c)), 1.0] for c in chunks]
@@ -259,6 +271,21 @@ class FakeAI:
         if self.raise_on_classify:
             raise RuntimeError("Anthropic indisponível")
         return self.relevant
+
+    classify_type_calls = 0
+
+    def classify_type(self, alias, sample):
+        self.classify_type_calls += 1
+        if self.raise_on_classify_type:
+            raise RuntimeError("classificador de tipo indisponível")
+        return self.doc_type
+
+    def identify_squad(self, text):
+        low = (text or "").lower()
+        for s in self.known_squads:
+            if s.lower() in low:
+                return s
+        return None
 
     def stream_chat(self, system, question):
         self.last_system = system

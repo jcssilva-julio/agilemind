@@ -63,38 +63,53 @@ def upload():
     def process():
         try:
             yield _sse({"type": "progress", "step": "extract", "pct": 10})
-            text = rag.extract_pdf_text(data)
+            pages = rag.extract_pdf_pages(data)
+            text = "\n\n".join(p for p in pages if p.strip())
             if not text.strip():
                 yield _sse({"type": "error", "message": "PDF sem texto extraível"})  # UP-05
                 return
 
-            yield _sse({"type": "progress", "step": "classify", "pct": 25})
+            yield _sse({"type": "progress", "step": "classify", "pct": 22})
             sample = " ".join(rag.chunk_text(text[:4000])[:5])[:2000]
+            # Etapa 1: classificação de domínio (TI/agilidade), fail-closed.
             try:
                 relevant = c.ai.is_relevant(alias, sample)
             except Exception:
-                # Fail-closed (UP-07): se não dá para classificar, bloqueia.
-                yield _sse({"type": "rejected", "message": "Não foi possível validar o documento agora. Tente novamente."})
+                yield _sse({"type": "rejected", "message": "Não foi possível validar o documento agora. Tente novamente."})  # UP-07
                 return
             if not relevant:
                 yield _sse({"type": "rejected", "message": "O documento não parece ser de TI ou agilidade. Apenas reports de squads e materiais técnicos são aceitos."})  # UP-02
                 return
 
-            yield _sse({"type": "progress", "step": "chunk", "pct": 35})
-            chunks = rag.chunk_text(text)
+            # Etapa 2: classificação de TIPO (só após aprovar o domínio — TYPE-07).
+            # Fallback seguro: nunca interrompe o upload por falha aqui (TYPE-06).
+            try:
+                doc_type = c.ai.classify_type(alias, sample)
+            except Exception:
+                doc_type = rag.DEFAULT_DOC_TYPE
 
-            yield _sse({"type": "progress", "step": "embed", "pct": 55})
+            yield _sse({"type": "progress", "step": "chunk", "pct": 38})
+            if doc_type == "squad_report_multi":
+                parts = rag.chunk_pages_with_squads(pages, c.ai.identify_squad)  # UC-02
+            else:
+                parts = [{"content": ch, "squad_name": None} for ch in rag.chunk_text(text)]
+            chunks = [p["content"] for p in parts]
+
+            yield _sse({"type": "progress", "step": "embed", "pct": 60})
             embeddings = c.ai.embed_documents(chunks)
 
-            yield _sse({"type": "progress", "step": "store", "pct": 85})
+            yield _sse({"type": "progress", "step": "store", "pct": 88})
             storage_path = f"{user_id}/{uuid.uuid4().hex}_{secure_filename(fname)}"
             c.storage.upload(storage_path, data)
-            doc_id = c.documents.create(user_id, alias, secure_filename(fname), storage_path, visibility)
-            items = [{"chunk_index": i, "content": ch, "embedding": emb}
-                     for i, (ch, emb) in enumerate(zip(chunks, embeddings))]
+            doc_id = c.documents.create(user_id, alias, secure_filename(fname),
+                                        storage_path, visibility, doc_type)
+            items = [{"chunk_index": i, "content": p["content"], "embedding": emb,
+                      "squad_name": p["squad_name"]}
+                     for i, (p, emb) in enumerate(zip(parts, embeddings))]
             c.chunks.create_many(doc_id, items, c.ai.embedding_model())
 
-            yield _sse({"type": "done", "document_id": doc_id, "alias": alias, "chunks": len(chunks)})
+            yield _sse({"type": "done", "document_id": doc_id, "alias": alias,
+                        "chunks": len(chunks), "document_type": doc_type})
         except Exception as e:
             yield _sse({"type": "error", "message": str(e)})
 
@@ -108,7 +123,8 @@ def list_indices():
     docs = _c().documents.list_visible_for(g.user_id)
     return jsonify({"indices": [{
         "document_id": d["id"], "alias": d["alias"], "filename": d["filename"],
-        "visibility": d["visibility"], "is_owner": d["owner_user_id"] == g.user_id,
+        "visibility": d["visibility"], "document_type": d.get("document_type"),
+        "is_owner": d["owner_user_id"] == g.user_id,
     } for d in docs]})
 
 
@@ -119,7 +135,9 @@ def load_index():
     if not _can_read(doc, g.user_id):
         return jsonify({"error": "Não encontrado"}), 404                   # MNG-05/CHAT-02
     return jsonify({"ok": True, "document_id": doc["id"], "alias": doc["alias"],
-                    "visibility": doc["visibility"]})
+                    "visibility": doc["visibility"],
+                    "document_type": doc.get("document_type"),
+                    "is_owner": doc["owner_user_id"] == g.user_id})
 
 
 @bp.post("/pdf/delete")
@@ -153,6 +171,23 @@ def set_visibility(doc_id):
     return jsonify({"ok": True})
 
 
+@bp.patch("/pdf/<doc_id>/type")
+@login_required
+def set_doc_type(doc_id):
+    # Correção manual do tipo detectado (só o dono).
+    c = _c()
+    doc = c.documents.get(doc_id)
+    if not doc:
+        return jsonify({"error": "Não encontrado"}), 404
+    if doc["owner_user_id"] != g.user_id:
+        return jsonify({"error": "Sem permissão"}), 403
+    dt = (request.get_json(silent=True) or {}).get("document_type")
+    if dt not in rag.DOC_TYPES:
+        return jsonify({"error": "Tipo inválido"}), 400
+    c.documents.set_type(doc_id, dt)
+    return jsonify({"ok": True})
+
+
 # ── Chat ───────────────────────────────────────────────────────────────
 @bp.post("/chat")
 @login_required
@@ -170,6 +205,15 @@ def chat():
         return jsonify({"error": "Não encontrado"}), 404                   # CHAT-02
 
     rows = c.chunks.get_by_document(doc_id)
+    doc_type = doc.get("document_type") or rag.DEFAULT_DOC_TYPE
+
+    # Retrieval ciente de squad (UC-03): se a pergunta cita uma squad do documento,
+    # restringe aos chunks dela + os gerais (squad_name nulo).
+    if doc_type == "squad_report_multi":
+        squads = {r.get("squad_name") for r in rows if r.get("squad_name")}
+        mentioned = next((s for s in squads if s.lower() in question.lower()), None)
+        if mentioned:
+            rows = [r for r in rows if r.get("squad_name") in (mentioned, None)]
     chunks = [r["content"] for r in rows]
     embeddings = [r["embedding"] for r in rows]
 
@@ -177,7 +221,7 @@ def chat():
         try:
             q_emb = c.ai.embed_query(question)
             top = rag.retrieve_top_k(q_emb, chunks, embeddings)
-            system = rag.SYSTEM_PROMPT.format(alias=doc["alias"], context="\n\n---\n\n".join(top))
+            system = rag.build_system_prompt(doc["alias"], doc_type, "\n\n---\n\n".join(top))
             for text in c.ai.stream_chat(system, question):
                 yield _sse({"type": "token", "text": text})
             yield _sse({"type": "done"})
