@@ -169,10 +169,96 @@ class FakeAppConfigRepo:
 
 class FakeDocumentsRepo:
     def __init__(self):
-        self.counts: dict[str, int] = {}
+        self.docs: dict[str, dict] = {}
+        self._seq = 0
+        self.counts: dict[str, int] = {}  # override manual p/ ADM-26
+
+    def create(self, owner_user_id, alias, filename, storage_path, visibility):
+        self._seq += 1
+        did = f"doc-{self._seq}"
+        self.docs[did] = {
+            "id": did, "owner_user_id": owner_user_id, "alias": alias,
+            "filename": filename, "storage_path": storage_path,
+            "visibility": visibility, "created_at": self._seq,
+        }
+        return did
+
+    def get(self, doc_id):
+        return self.docs.get(doc_id)
+
+    def delete(self, doc_id):
+        self.docs.pop(doc_id, None)
+
+    def set_visibility(self, doc_id, visibility):
+        if doc_id in self.docs:
+            self.docs[doc_id]["visibility"] = visibility
+
+    def list_visible_for(self, user_id):
+        out = [d for d in self.docs.values()
+               if d["owner_user_id"] == user_id or d["visibility"] == "public"]
+        return sorted(out, key=lambda x: x["created_at"], reverse=True)
 
     def count_by_owner(self, user_id):
-        return self.counts.get(user_id, 0)
+        if user_id in self.counts:
+            return self.counts[user_id]
+        return sum(1 for d in self.docs.values() if d["owner_user_id"] == user_id)
+
+
+class FakeChunksRepo:
+    def __init__(self):
+        self.by_doc: dict[str, list] = {}
+
+    def create_many(self, document_id, items, embedding_model):
+        self.by_doc[document_id] = [
+            {"content": it["content"], "embedding": it["embedding"]} for it in items
+        ]
+
+    def get_by_document(self, document_id):
+        return self.by_doc.get(document_id, [])
+
+    def delete_by_document(self, document_id):
+        self.by_doc.pop(document_id, None)
+
+
+class FakeStorage:
+    def __init__(self):
+        self.files: dict[str, bytes] = {}
+
+    def upload(self, path, data, content_type="application/pdf"):
+        self.files[path] = data
+        return path
+
+    def download(self, path):
+        return self.files.get(path, b"")
+
+    def delete(self, path):
+        self.files.pop(path, None)
+
+
+class FakeAI:
+    """IA fake determinística. relevant controla o classificador; raise_on_classify
+    simula a Anthropic fora do ar (para o teste fail-closed)."""
+    def __init__(self, relevant=True, raise_on_classify=False):
+        self.relevant = relevant
+        self.raise_on_classify = raise_on_classify
+
+    def embed_documents(self, chunks):
+        return [[float(len(c)), 1.0] for c in chunks]
+
+    def embed_query(self, query):
+        return [float(len(query)), 1.0]
+
+    def is_relevant(self, alias, sample):
+        if self.raise_on_classify:
+            raise RuntimeError("Anthropic indisponível")
+        return self.relevant
+
+    def stream_chat(self, system, question):
+        yield "Resposta "
+        yield "do AgileMind."
+
+    def embedding_model(self):
+        return "voyage-fake"
 
 
 class FakeModelValidator:

@@ -20,8 +20,9 @@ def container():
     from config import Config
     from container import _assemble
     from tests.fakes import (
-        FakeAppConfigRepo, FakeAuditRepo, FakeAuthProvider, FakeDocumentsRepo,
-        FakeModelValidator, FakeProfilesRepo, FakeSessionsRepo,
+        FakeAI, FakeAppConfigRepo, FakeAuditRepo, FakeAuthProvider, FakeChunksRepo,
+        FakeDocumentsRepo, FakeModelValidator, FakeProfilesRepo, FakeSessionsRepo,
+        FakeStorage,
     )
 
     cfg = Config(
@@ -36,6 +37,9 @@ def container():
         audit=FakeAuditRepo(),
         app_config=FakeAppConfigRepo(),
         documents=FakeDocumentsRepo(),
+        chunks=FakeChunksRepo(),
+        storage=FakeStorage(),
+        ai=FakeAI(),
         model_validator=FakeModelValidator(),
     )
 

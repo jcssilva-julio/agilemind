@@ -45,11 +45,11 @@ def create_app(config: Config | None = None, container=None) -> Flask:
 
     from admin.routes import bp as admin_bp
     from auth.routes import bp as auth_bp
-    from routes.legacy import bp as legacy_bp
+    from routes.documents import bp as documents_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
-    app.register_blueprint(legacy_bp)
+    app.register_blueprint(documents_bp)
     return app
 
 
