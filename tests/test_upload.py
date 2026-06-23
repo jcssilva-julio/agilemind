@@ -91,16 +91,45 @@ def test_up_07_falha_classificacao_fail_closed(user_client, container, monkeypat
     assert not container.documents.docs and not container.storage.files
 
 
-# 4.2 Visibilidade — Fase 4
-@pytest.mark.skip(reason="Fase 4: visibilidade (UX de escolha no upload)")
+# 4.2 Visibilidade
+@pytest.mark.skip(reason="UX no frontend: seletor de visibilidade no template")
 def test_up_08_pergunta_visibilidade(): ...
-@pytest.mark.skip(reason="Fase 4")
-def test_up_09_marcado_privado(): ...
-@pytest.mark.skip(reason="Fase 4")
-def test_up_10_marcado_publico(): ...
-@pytest.mark.skip(reason="Fase 4")
-def test_up_11_sem_escolher(): ...
-@pytest.mark.skip(reason="Fase 4")
-def test_up_12_alterar_visibilidade(): ...
-@pytest.mark.skip(reason="Fase 4")
-def test_up_13_outro_nao_altera(): ...
+
+
+def test_up_09_marcado_privado(user_client, container, monkeypatch):
+    client, _ = user_client
+    _mock_text(monkeypatch, "sprint velocity " * 30)
+    ev = sse(_upload(client, visibility="private"))
+    did = [e for e in ev if e["type"] == "done"][0]["document_id"]
+    assert container.documents.get(did)["visibility"] == "private"
+
+
+def test_up_10_marcado_publico(user_client, container, monkeypatch):
+    client, _ = user_client
+    _mock_text(monkeypatch, "sprint velocity " * 30)
+    ev = sse(_upload(client, visibility="public"))
+    did = [e for e in ev if e["type"] == "done"][0]["document_id"]
+    assert container.documents.get(did)["visibility"] == "public"
+
+
+def test_up_11_sem_escolher_visibilidade(user_client):
+    client, _ = user_client
+    r = client.post("/upload", data={"file": (io.BytesIO(PDF), "r.pdf"), "alias": "X"},
+                    content_type="multipart/form-data")
+    assert r.status_code == 400
+
+
+def test_up_12_alterar_visibilidade_pelo_dono(client, make_user, login, container):
+    u = make_user(email="dono@x.com", password="senha123")
+    login(u["email"], "senha123")
+    did = container.documents.create(u["user_id"], "D", "d.pdf", "p", "private")
+    r = client.patch(f"/pdf/{did}/visibility", json={"visibility": "public"})
+    assert r.status_code == 200 and container.documents.get(did)["visibility"] == "public"
+
+
+def test_up_13_outro_usuario_nao_altera(client, make_user, login, container):
+    dono = make_user(email="dono@x.com", password="senha123")
+    did = container.documents.create(dono["user_id"], "D", "d.pdf", "p", "private")
+    outro = make_user(email="outro@x.com", password="senha123")
+    login(outro["email"], "senha123")
+    assert client.patch(f"/pdf/{did}/visibility", json={"visibility": "public"}).status_code == 403

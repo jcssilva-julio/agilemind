@@ -52,9 +52,10 @@ def upload():
         return jsonify({"error": "Apenas PDFs são aceitos"}), 400          # UP-03
 
     alias = (request.form.get("alias") or "").strip() or fname
-    visibility = request.form.get("visibility") or "private"
+    visibility = request.form.get("visibility")
     if visibility not in ("private", "public"):
-        return jsonify({"error": "Visibilidade inválida"}), 400            # UP-11
+        # Visibilidade é obrigatória — o upload não prossegue sem a escolha (UP-11).
+        return jsonify({"error": "Escolha a visibilidade do documento"}), 400
     data = file.read()
     user_id = g.user_id
     c = _c()

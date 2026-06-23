@@ -241,6 +241,7 @@ class FakeAI:
     def __init__(self, relevant=True, raise_on_classify=False):
         self.relevant = relevant
         self.raise_on_classify = raise_on_classify
+        self.last_system = None  # último contexto usado (p/ provar isolamento)
 
     def embed_documents(self, chunks):
         return [[float(len(c)), 1.0] for c in chunks]
@@ -254,6 +255,7 @@ class FakeAI:
         return self.relevant
 
     def stream_chat(self, system, question):
+        self.last_system = system
         yield "Resposta "
         yield "do AgileMind."
 
