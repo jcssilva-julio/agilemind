@@ -289,6 +289,8 @@ html, body {
 }
 .alias-input {
   flex: 1;
+  min-width: 0; /* permite o flex encolher abaixo da largura intrínseca (select não estoura) */
+  max-width: 100%;
   background: var(--bg-elevated);
   border: 1px solid var(--border-md);
   border-radius: var(--radius-md);
