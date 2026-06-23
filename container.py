@@ -82,7 +82,7 @@ def _assemble(config, auth_provider, profiles, sessions, audit, app_config,
     auth_service = AuthService(config, auth_provider, profiles, sessions, rate_limiter)
     admin_service = AdminService(
         config, auth_provider, profiles, sessions, audit, documents,
-        app_config, model_validator,
+        app_config, model_validator, chunks=chunks, storage=storage, ai=ai,
     )
     return Container(
         config=config, auth_provider=auth_provider, profiles=profiles,

@@ -35,3 +35,8 @@ class SupabaseDocumentChunksRepo:
 
     def delete_by_document(self, document_id) -> None:
         self._sb.table("document_chunks").delete().eq("document_id", document_id).execute()
+
+    def count_by_document(self, document_id) -> int:
+        res = (self._sb.table("document_chunks").select("id", count="exact")
+               .eq("document_id", document_id).execute())
+        return res.count or 0

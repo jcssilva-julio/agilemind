@@ -146,6 +146,34 @@ def set_model():
     return jsonify({"ok": True}), 200
 
 
+# ── Documentos (visão administrativa) ──────────────────────────────────
+@bp.get("/admin/documents")
+@admin_required
+def list_documents():
+    return jsonify({"documents": _svc().list_documents()}), 200
+
+
+@bp.delete("/admin/documents/<doc_id>")
+@admin_required
+def delete_document(doc_id):
+    _svc().delete_document(g.user_id, doc_id)
+    return jsonify({"ok": True}), 200
+
+
+@bp.post("/admin/documents/<doc_id>/reindex")
+@admin_required
+def reindex_document(doc_id):
+    from services.errors import DomainError
+    try:
+        n = _svc().reindex_document(g.user_id, doc_id)
+    except DomainError:
+        raise  # 4xx tratado pelo handler de domínio
+    except Exception:
+        # Reindex falhou (ex.: extração/embed). Estado anterior preservado (ADM-30).
+        return jsonify({"error": "Falha ao reindexar o documento"}), 500
+    return jsonify({"ok": True, "chunks": n}), 200
+
+
 # ── Auditoria (somente leitura) ────────────────────────────────────────
 @bp.get("/admin/audit")
 @admin_required

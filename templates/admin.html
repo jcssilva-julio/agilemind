@@ -68,6 +68,7 @@ input:focus,select:focus{border-color:var(--accent)}
   <aside class="side">
     <div class="brand">AgileMind<small>Administração</small></div>
     <div class="tab active" data-tab="users">👥 Usuários</div>
+    <div class="tab" data-tab="documents">📄 Documentos</div>
     <div class="tab" data-tab="model">🧠 Modelo de IA</div>
     <div class="tab" data-tab="audit">📜 Auditoria</div>
     <div class="spacer"></div>
@@ -95,6 +96,14 @@ input:focus,select:focus{border-color:var(--accent)}
       </div>
       <table><thead><tr><th>E-mail</th><th>Nome</th><th>Papel</th><th>Status</th><th>Ações</th></tr></thead>
         <tbody id="usersBody"><tr><td colspan="5" class="empty">Carregando...</td></tr></tbody>
+      </table>
+    </section>
+
+    <!-- DOCUMENTS -->
+    <section class="panel" id="panel-documents">
+      <div class="head"><h1>Documentos indexados</h1></div>
+      <table><thead><tr><th>Documento</th><th>Dono</th><th>Visibilidade</th><th>Chunks</th><th>Data</th><th>Ações</th></tr></thead>
+        <tbody id="docsBody"><tr><td colspan="6" class="empty">Carregando...</td></tr></tbody>
       </table>
     </section>
 
@@ -138,8 +147,36 @@ document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
   t.classList.add('active'); $('panel-'+t.dataset.tab).classList.add('active');
+  if(t.dataset.tab==='documents') loadDocuments();
   if(t.dataset.tab==='model') loadModel(); if(t.dataset.tab==='audit') loadAudit();
 }));
+
+// Documents
+async function loadDocuments(){
+  const {data}=await api('GET','/admin/documents');
+  const tb=$('docsBody'); const ds=data.documents||[];
+  if(!ds.length){tb.innerHTML='<tr><td colspan="6" class="empty">Nenhum documento indexado.</td></tr>';return;}
+  tb.innerHTML=ds.map(d=>`<tr>
+    <td>${esc(d.alias)}</td>
+    <td class="mono" style="font-size:11px">${esc(d.owner_email)||(d.owner_user_id||'').slice(0,8)}</td>
+    <td><span class="badge ${d.visibility==='public'?'on':'user'}">${d.visibility}</span></td>
+    <td>${d.chunks}</td>
+    <td class="mono" style="font-size:11px">${(String(d.created_at||'')).replace('T',' ').slice(0,19)}</td>
+    <td><div class="row-actions">
+      <button class="mini" onclick="reindexDoc('${d.document_id}')">reindexar</button>
+      <button class="mini danger" onclick="delDoc('${d.document_id}','${esc(d.alias)}')">excluir</button>
+    </div></td></tr>`).join('');
+}
+async function delDoc(id,alias){
+  if(!confirm('Excluir o documento "'+alias+'" de vez? (remove do Storage e do banco)'))return;
+  const r=await api('DELETE','/admin/documents/'+id);
+  r.ok?(toast('ok','Documento excluído.'),loadDocuments()):toast('err',r.data.error);
+}
+async function reindexDoc(id){
+  toast('ok','Reindexando...');
+  const r=await api('POST','/admin/documents/'+id+'/reindex');
+  r.ok?(toast('ok','Reindexado ('+r.data.chunks+' chunks).'),loadDocuments()):toast('err',r.data.error||'Falha ao reindexar');
+}
 
 // Users
 async function loadUsers(){

@@ -198,6 +198,9 @@ class FakeDocumentsRepo:
                if d["owner_user_id"] == user_id or d["visibility"] == "public"]
         return sorted(out, key=lambda x: x["created_at"], reverse=True)
 
+    def list_all(self):
+        return sorted(self.docs.values(), key=lambda x: x["created_at"], reverse=True)
+
     def count_by_owner(self, user_id):
         if user_id in self.counts:
             return self.counts[user_id]
@@ -218,6 +221,9 @@ class FakeChunksRepo:
 
     def delete_by_document(self, document_id):
         self.by_doc.pop(document_id, None)
+
+    def count_by_document(self, document_id):
+        return len(self.by_doc.get(document_id, []))
 
 
 class FakeStorage:

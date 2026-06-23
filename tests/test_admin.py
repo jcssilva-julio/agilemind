@@ -224,15 +224,58 @@ def test_adm_27_admin_nao_exclui_a_si(as_admin):
     assert client.delete(f"/admin/users/{admin['user_id']}").status_code == 403
 
 
-# ═══════════════ 5.4 Documentos — deferido p/ Fases 3/4 ═══════════════
-@pytest.mark.skip(reason="Depende da Fase 3/4 (documentos no Storage/Postgres)")
-def test_adm_28_ver_todos_documentos(): ...
-@pytest.mark.skip(reason="Depende da Fase 3/4")
-def test_adm_29_forcar_reindexacao(): ...
-@pytest.mark.skip(reason="Depende da Fase 3/4")
-def test_adm_30_reindexacao_falha_atomica(): ...
-@pytest.mark.skip(reason="Depende da Fase 3/4")
-def test_adm_31_excluir_doc_de_qualquer_usuario(): ...
+# ═══════════════ 5.4 Documentos (visão administrativa) ═══════════════
+def _seed_doc(container, owner_id, alias, visibility="private", chunks=2):
+    did = container.documents.create(owner_id, alias, f"{alias}.pdf", f"p/{alias}", visibility)
+    container.chunks.create_many(
+        did, [{"chunk_index": i, "content": f"c{i}", "embedding": [1.0, 1.0]} for i in range(chunks)], "m")
+    return did
+
+
+def test_adm_28_ver_todos_documentos(as_admin, make_user, container):
+    client, admin = as_admin()
+    b = make_user(email="b@x.com")
+    _seed_doc(container, admin["user_id"], "DoAdmin", "private")
+    _seed_doc(container, b["user_id"], "DoB", "private")  # privado de outro
+    docs = client.get("/admin/documents").get_json()["documents"]
+    aliases = [d["alias"] for d in docs]
+    # Admin vê TODOS, inclusive privados de outros, com dono e chunks.
+    assert "DoAdmin" in aliases and "DoB" in aliases
+    dob = next(d for d in docs if d["alias"] == "DoB")
+    assert dob["owner_email"] == "b@x.com" and dob["chunks"] == 2
+
+
+def test_adm_29_forcar_reindexacao(as_admin, make_user, container, monkeypatch):
+    client, _ = as_admin()
+    b = make_user(email="b@x.com")
+    did = _seed_doc(container, b["user_id"], "DoB", "private", chunks=2)
+    container.storage.files[f"p/DoB"] = b"%PDF"
+    monkeypatch.setattr("services.rag.extract_pdf_text", lambda d: "sprint velocity " * 60)
+    r = client.post(f"/admin/documents/{did}/reindex")
+    assert r.status_code == 200 and r.get_json()["chunks"] >= 1
+
+
+def test_adm_30_reindexacao_falha_atomica(as_admin, make_user, container, monkeypatch):
+    client, _ = as_admin()
+    b = make_user(email="b@x.com")
+    did = _seed_doc(container, b["user_id"], "DoB", "private", chunks=3)
+    container.storage.files["p/DoB"] = b"%PDF"
+    monkeypatch.setattr("services.rag.extract_pdf_text", lambda d: "x " * 50)
+    # embed falha → não pode perder os chunks antigos.
+    def boom(chunks): raise RuntimeError("falha embed")
+    monkeypatch.setattr(container.ai, "embed_documents", boom)
+    r = client.post(f"/admin/documents/{did}/reindex")
+    assert r.status_code >= 400
+    assert container.chunks.count_by_document(did) == 3  # estado anterior preservado
+
+
+def test_adm_31_excluir_doc_de_qualquer_usuario(as_admin, make_user, container):
+    client, _ = as_admin()
+    b = make_user(email="b@x.com")
+    did = _seed_doc(container, b["user_id"], "DoB", "private")
+    assert client.delete(f"/admin/documents/{did}").status_code == 200
+    assert container.documents.get(did) is None
+    assert any(e["action"] == "admin_delete_document" for e in container.audit.entries)
 
 
 # ═══════════════ 5.5 Configuração de modelo de IA ═══════════════

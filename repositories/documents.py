@@ -46,3 +46,7 @@ class SupabaseDocumentsRepo:
         res = (self._sb.table("documents").select("id", count="exact")
                .eq("owner_user_id", user_id).execute())
         return res.count or 0
+
+    def list_all(self) -> list[dict]:
+        res = self._sb.table("documents").select("*").order("created_at", desc=True).execute()
+        return res.data or []

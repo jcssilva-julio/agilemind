@@ -20,7 +20,7 @@ VOYAGE_KEY = "voyage_model"
 
 class AdminService:
     def __init__(self, config, auth_provider, profiles, sessions, audit,
-                 documents, app_config, model_validator):
+                 documents, app_config, model_validator, chunks=None, storage=None, ai=None):
         self.cfg = config
         self.provider = auth_provider
         self.profiles = profiles
@@ -29,6 +29,9 @@ class AdminService:
         self.documents = documents
         self._app_config = app_config
         self.model_validator = model_validator
+        self.chunks = chunks
+        self.storage = storage
+        self.ai = ai
 
     # ── Senha master (bootstrap / emergência) ──────────────────────────
     def _check_master(self, master_password) -> None:
@@ -175,6 +178,50 @@ class AdminService:
 
     def app_config_set(self, key, value, actor_id):
         self._app_config.set(key, value, actor_id)
+
+    # ── Documentos (visão administrativa, UC-06) ───────────────────────
+    def list_documents(self) -> list[dict]:
+        emails = {u["id"]: u["email"] for u in self.provider.list_users()}
+        out = []
+        for d in self.documents.list_all():
+            out.append({
+                "document_id": d["id"], "alias": d["alias"], "filename": d["filename"],
+                "owner_user_id": d["owner_user_id"], "owner_email": emails.get(d["owner_user_id"]),
+                "visibility": d["visibility"], "created_at": d.get("created_at"),
+                "chunks": self.chunks.count_by_document(d["id"]),
+            })
+        return out
+
+    def delete_document(self, actor_id, doc_id) -> None:
+        doc = self.documents.get(doc_id)
+        if not doc:
+            raise NotFound("Documento não encontrado")
+        # Log antes de remover (ADM-31).
+        self.audit.log(actor_id, "admin_delete_document", target_document_id=doc_id,
+                       details={"alias": doc["alias"], "owner": doc["owner_user_id"]})
+        self.chunks.delete_by_document(doc_id)
+        self.storage.delete(doc["storage_path"])
+        self.documents.delete(doc_id)
+
+    def reindex_document(self, actor_id, doc_id) -> int:
+        """Reprocessa o PDF do zero. Atômico: só apaga os chunks antigos depois de
+        gerar os novos com sucesso (ADM-30)."""
+        from services import rag
+
+        doc = self.documents.get(doc_id)
+        if not doc:
+            raise NotFound("Documento não encontrado")
+        data = self.storage.download(doc["storage_path"])
+        text = rag.extract_pdf_text(data)
+        chunks = rag.chunk_text(text)
+        embeddings = self.ai.embed_documents(chunks)  # se falhar aqui, dados antigos intactos
+        items = [{"chunk_index": i, "content": ch, "embedding": emb}
+                 for i, (ch, emb) in enumerate(zip(chunks, embeddings))]
+        self.chunks.delete_by_document(doc_id)
+        self.chunks.create_many(doc_id, items, self.ai.embedding_model())
+        self.audit.log(actor_id, "reindex_document", target_document_id=doc_id,
+                       details={"chunks": len(items)})
+        return len(items)
 
     # ── Auditoria ──────────────────────────────────────────────────────
     def audit_list(self, limit=200) -> list[dict]:
