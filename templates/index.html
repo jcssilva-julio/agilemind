@@ -842,9 +842,13 @@ html, body {
   .header-author { display: none; }
   .header-status { display: none; }
   .logo-name-sub { display: none; }
-  .header-doc-badge { max-width: 120px; }
+  .header-doc-badge { display: none; } /* libera espaço; doc ativo aparece na sidebar */
   .btn-label { display: none; }
   .btn-clear { padding: 6px 8px !important; margin-left: 6px !important; gap: 0; }
+  /* font-size >= 16px evita o auto-zoom do iOS ao focar campos */
+  .input-textarea, .alias-input, .modal-input { font-size: 16px; }
+  .main, .chat-area { overflow-x: hidden; }
+  .input-row { max-width: 100%; }
 
   .sidebar {
     position: fixed; top: 54px; bottom: 0; left: 0;

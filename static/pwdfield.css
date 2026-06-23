@@ -27,3 +27,8 @@
 .pwdfield-eye:hover {
   color: var(--accent, #00c896);
 }
+
+/* iOS: font-size >= 16px no campo evita o auto-zoom ao focar */
+@media (max-width: 768px) {
+  .pwdfield > input { font-size: 16px; }
+}
