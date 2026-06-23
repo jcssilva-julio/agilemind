@@ -180,6 +180,7 @@ async function loadDocuments(){
     <td>${d.chunks}</td>
     <td class="mono" style="font-size:11px">${(String(d.created_at||'')).replace('T',' ').slice(0,19)}</td>
     <td><div class="row-actions">
+      <a class="mini" href="/admin/documents/${d.document_id}/download" style="text-decoration:none">baixar</a>
       <button class="mini" onclick="reindexDoc('${d.document_id}')">reindexar</button>
       <button class="mini danger" onclick="delDoc('${d.document_id}','${esc(d.alias)}')">excluir</button>
     </div></td></tr>`).join('');

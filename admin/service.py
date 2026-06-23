@@ -193,6 +193,14 @@ class AdminService:
             })
         return out
 
+    def get_document_file(self, doc_id) -> tuple[bytes, str]:
+        """Baixa o PDF original do Storage. Retorna (bytes, filename)."""
+        doc = self.documents.get(doc_id)
+        if not doc:
+            raise NotFound("Documento não encontrado")
+        data = self.storage.download(doc["storage_path"])
+        return data, doc["filename"]
+
     def delete_document(self, actor_id, doc_id) -> None:
         doc = self.documents.get(doc_id)
         if not doc:

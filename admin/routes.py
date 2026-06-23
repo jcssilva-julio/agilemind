@@ -6,7 +6,8 @@ from __future__ import annotations
 
 from functools import wraps
 
-from flask import Blueprint, current_app, g, jsonify, render_template, request
+from flask import Blueprint, Response, current_app, g, jsonify, render_template, request
+from werkzeug.utils import secure_filename
 
 from auth.routes import current_role, current_user_id
 
@@ -151,6 +152,15 @@ def set_model():
 @admin_required
 def list_documents():
     return jsonify({"documents": _svc().list_documents()}), 200
+
+
+@bp.get("/admin/documents/<doc_id>/download")
+@admin_required
+def download_document(doc_id):
+    data, filename = _svc().get_document_file(doc_id)
+    safe = secure_filename(filename) or "documento.pdf"
+    return Response(data, mimetype="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{safe}"'})
 
 
 @bp.delete("/admin/documents/<doc_id>")

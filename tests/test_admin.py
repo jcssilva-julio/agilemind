@@ -269,6 +269,17 @@ def test_adm_30_reindexacao_falha_atomica(as_admin, make_user, container, monkey
     assert container.chunks.count_by_document(did) == 3  # estado anterior preservado
 
 
+def test_admin_download_documento(as_admin, make_user, container):
+    client, _ = as_admin()
+    b = make_user(email="b@x.com")
+    did = _seed_doc(container, b["user_id"], "DoB", "private")
+    container.storage.files["p/DoB"] = b"%PDF-conteudo"
+    r = client.get(f"/admin/documents/{did}/download")
+    assert r.status_code == 200
+    assert r.data == b"%PDF-conteudo"
+    assert "attachment" in r.headers.get("Content-Disposition", "")
+
+
 def test_adm_31_excluir_doc_de_qualquer_usuario(as_admin, make_user, container):
     client, _ = as_admin()
     b = make_user(email="b@x.com")
