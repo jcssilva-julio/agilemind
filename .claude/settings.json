@@ -47,7 +47,8 @@
       "Bash(curl -s -o /dev/null -w \"GET /static/pwdfield.js -> HTTP %{http_code}\\\\n\" http://127.0.0.1:5000/static/pwdfield.js)",
       "Bash(curl -s -o /dev/null -w \"GET /static/pwdfield.css -> HTTP %{http_code}\\\\n\" http://127.0.0.1:5000/static/pwdfield.css)",
       "Bash(xargs -n1 basename)",
-      "Bash(rm \"/Users/juliocesarsouzasilva/.claude/projects/-Users-juliocesarsouzasilva-Dev-Agentes-de-IA-chat-analise-squads/memory/login-sem-link-setup.md\")"
+      "Bash(rm \"/Users/juliocesarsouzasilva/.claude/projects/-Users-juliocesarsouzasilva-Dev-Agentes-de-IA-chat-analise-squads/memory/login-sem-link-setup.md\")",
+      "Bash(./venv/bin/python -m pytest tests/test_auth.py tests/test_admin.py -q)"
     ],
     "additionalDirectories": [
       "/tmp"

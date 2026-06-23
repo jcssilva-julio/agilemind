@@ -101,7 +101,13 @@ def logout():
 @login_required
 def me():
     # Identidade e role vêm do token/servidor, nunca do payload (AUTH-24).
-    return jsonify({"user_id": g.user_id, "role": _profiles().get_role(g.user_id)})
+    c = _container()
+    return jsonify({
+        "user_id": g.user_id,
+        "role": c.profiles.get_role(g.user_id),
+        "nome": c.profiles.get_nome(g.user_id),
+        "email": c.auth_provider.get_email(g.user_id),
+    })
 
 
 @bp.post("/account/change-password")

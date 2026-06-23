@@ -1100,6 +1100,7 @@ let activeDocumentId = null;
 let activeAlias    = null;
 let isStreaming    = false;
 let pendingFile    = null;
+let userInitials   = 'EU';   // iniciais de quem está logado (avatar do "Você")
 
 // ═══════════════════════════════════════════════════════
 //  ELEMENTS
@@ -1405,7 +1406,7 @@ function appendMsg(role, text = '') {
           <circle cx="3.5" cy="4" r="1.8" fill="currentColor"/>
         </svg>
       </div>`
-    : `<div class="msg-avatar user">JC</div>`;
+    : `<div class="msg-avatar user">${userInitials}</div>`;
 
   div.innerHTML = `
     ${avatarHTML}
@@ -1664,12 +1665,23 @@ function closeSidebar() { sidebarEl.classList.remove('open'); sidebarBackdrop.cl
 document.getElementById('btnMenu').addEventListener('click', openSidebar);
 sidebarBackdrop.addEventListener('click', closeSidebar);
 
-// Mostra o link de Admin só para administradores (role do /me)
+// Calcula as iniciais a partir do nome (ou e-mail)
+function initialsFrom(nome, email) {
+  const n = (nome || '').trim();
+  if (n) {
+    const parts = n.split(/\s+/);
+    return (parts.length >= 2 ? parts[0][0] + parts[1][0] : n.slice(0, 2)).toUpperCase();
+  }
+  return (email || 'EU').slice(0, 2).toUpperCase();
+}
+
+// /me: define avatar do "Você" e mostra o link Admin só para administradores
 async function checkRole() {
   try {
     const r = await fetch('/me');
     if (r.ok) {
       const me = await r.json();
+      userInitials = initialsFrom(me.nome, me.email);
       if (me.role === 'admin') document.getElementById('lnkAdmin').classList.remove('hidden');
     }
   } catch {}
