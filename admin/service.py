@@ -187,7 +187,8 @@ class AdminService:
             out.append({
                 "document_id": d["id"], "alias": d["alias"], "filename": d["filename"],
                 "owner_user_id": d["owner_user_id"], "owner_email": emails.get(d["owner_user_id"]),
-                "visibility": d["visibility"], "created_at": d.get("created_at"),
+                "visibility": d["visibility"], "document_type": d.get("document_type"),
+                "created_at": d.get("created_at"),
                 "chunks": self.chunks.count_by_document(d["id"]),
             })
         return out

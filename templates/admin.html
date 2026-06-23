@@ -117,8 +117,8 @@ input:focus,select:focus{border-color:var(--accent)}
     <!-- DOCUMENTS -->
     <section class="panel" id="panel-documents">
       <div class="head"><h1>Documentos indexados</h1></div>
-      <table><thead><tr><th>Documento</th><th>Dono</th><th>Visibilidade</th><th>Chunks</th><th>Data</th><th>Ações</th></tr></thead>
-        <tbody id="docsBody"><tr><td colspan="6" class="empty">Carregando...</td></tr></tbody>
+      <table><thead><tr><th>Documento</th><th>Dono</th><th>Visibilidade</th><th>Tipo</th><th>Chunks</th><th>Data</th><th>Ações</th></tr></thead>
+        <tbody id="docsBody"><tr><td colspan="7" class="empty">Carregando...</td></tr></tbody>
       </table>
     </section>
 
@@ -171,11 +171,12 @@ document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
 async function loadDocuments(){
   const {data}=await api('GET','/admin/documents');
   const tb=$('docsBody'); const ds=data.documents||[];
-  if(!ds.length){tb.innerHTML='<tr><td colspan="6" class="empty">Nenhum documento indexado.</td></tr>';return;}
+  if(!ds.length){tb.innerHTML='<tr><td colspan="7" class="empty">Nenhum documento indexado.</td></tr>';return;}
   tb.innerHTML=ds.map(d=>`<tr>
     <td>${esc(d.alias)}</td>
     <td class="mono" style="font-size:11px">${esc(d.owner_email)||(d.owner_user_id||'').slice(0,8)}</td>
     <td><span class="badge ${d.visibility==='public'?'on':'user'}">${d.visibility}</span></td>
+    <td class="mono" style="font-size:11px">${esc(d.document_type)}</td>
     <td>${d.chunks}</td>
     <td class="mono" style="font-size:11px">${(String(d.created_at||'')).replace('T',' ').slice(0,19)}</td>
     <td><div class="row-actions">

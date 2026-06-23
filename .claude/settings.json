@@ -51,7 +51,8 @@
       "Bash(./venv/bin/python -m pytest tests/test_auth.py tests/test_admin.py -q)",
       "Bash(./venv/bin/python -m pytest tests/test_auth.py::test_auth_24_token_de_outro_usuario -q)",
       "Bash(./venv/bin/python -c \"from app import create_app; create_app\\(\\); print\\('ok'\\)\")",
-      "Bash(./venv/bin/python -m pytest tests/test_doctype.py -q)"
+      "Bash(./venv/bin/python -m pytest tests/test_doctype.py -q)",
+      "Bash(./venv/bin/python -m pytest tests/test_admin.py -q)"
     ],
     "additionalDirectories": [
       "/tmp"
