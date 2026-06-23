@@ -124,6 +124,7 @@ input:focus,select:focus{border-color:var(--accent)}
 
 <script>
 const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 function toast(kind, html){const t=$('toast');t.className='toast show '+kind;t.innerHTML=html;clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),kind==='ok'?4000:6000);}
 async function api(method, url, body){
   const o={method,headers:{}};
@@ -148,8 +149,8 @@ async function loadUsers(){
   tb.innerHTML=us.map(u=>{
     const active=u.is_active;
     return `<tr>
-      <td>${u.email||'—'}</td><td>${u.nome||'—'}</td>
-      <td><span class="badge ${u.role}">${u.role}</span></td>
+      <td>${esc(u.email)||'—'}</td><td>${esc(u.nome)||'—'}</td>
+      <td><span class="badge ${u.role}">${esc(u.role)}</span></td>
       <td><span class="badge ${active?'on':'off'}">${active?'ativo':'desativado'}</span></td>
       <td><div class="row-actions">
         <button class="mini" onclick="editUser('${u.user_id}','${u.nome||''}')">editar</button>

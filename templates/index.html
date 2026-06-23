@@ -1260,7 +1260,7 @@ function renderReportsList(indices, autoActivate = false) {
     item.innerHTML = `
       <div class="report-item-icon">📄</div>
       <div class="report-item-info">
-        <div class="report-item-name">${idx.alias}</div>
+        <div class="report-item-name">${escapeHtml(idx.alias)}</div>
         <div class="report-item-meta">${visBadge}${idx.is_owner ? '' : ' · de outro usuário'}</div>
       </div>
       ${delBtn}`;
