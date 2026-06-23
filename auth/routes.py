@@ -102,10 +102,11 @@ def logout():
 def me():
     # Identidade e role vêm do token/servidor, nunca do payload (AUTH-24).
     c = _container()
+    prof = c.profiles.get(g.user_id) or {}
     return jsonify({
         "user_id": g.user_id,
-        "role": c.profiles.get_role(g.user_id),
-        "nome": c.profiles.get_nome(g.user_id),
+        "role": prof.get("role"),
+        "nome": prof.get("nome"),
         "email": c.auth_provider.get_email(g.user_id),
     })
 
