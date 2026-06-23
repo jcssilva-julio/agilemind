@@ -979,7 +979,8 @@ html, body {
         </div>
       </div>
       <div class="alias-row">
-        <input class="alias-input" id="aliasInput" type="text" placeholder="Nome do report (opcional)"/>
+        <input class="alias-input" id="aliasInput" type="text" placeholder="Nome do report (opcional)"
+               autocomplete="off" autocapitalize="off" spellcheck="false" data-1p-ignore data-lpignore="true"/>
         <button class="btn-upload" id="btnUpload" disabled>Indexar</button>
       </div>
       <div style="display:flex;gap:7px;align-items:center;margin-top:8px">
@@ -1712,6 +1713,9 @@ document.getElementById('pwd_save').addEventListener('click', async () => {
 
 (async function init() {
   setStatus('', 'Aguardando report');
+  // Defesa contra autofill do navegador no campo de nome do report
+  aliasInput.value = '';
+  setTimeout(() => { if (!pendingFile) aliasInput.value = ''; }, 300);
   checkRole();
   await loadReportsList(true);
 })();
