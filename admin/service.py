@@ -204,23 +204,39 @@ class AdminService:
         self.documents.delete(doc_id)
 
     def reindex_document(self, actor_id, doc_id) -> int:
-        """Reprocessa o PDF do zero. Atômico: só apaga os chunks antigos depois de
-        gerar os novos com sucesso (ADM-30)."""
+        """Reprocessa o PDF do zero com o pipeline atual: reclassifica o tipo e
+        refaz o chunking (multi-squad quando aplicável). Atômico: só apaga os
+        chunks antigos depois de gerar os novos com sucesso (ADM-30)."""
         from services import rag
 
         doc = self.documents.get(doc_id)
         if not doc:
             raise NotFound("Documento não encontrado")
         data = self.storage.download(doc["storage_path"])
-        text = rag.extract_pdf_text(data)
-        chunks = rag.chunk_text(text)
+        pages = rag.extract_pdf_pages(data)
+        text = "\n\n".join(p for p in pages if p.strip())
+
+        # Reclassifica o tipo (fallback: mantém o tipo atual).
+        sample = " ".join(rag.chunk_text(text[:4000])[:5])[:2000]
+        try:
+            doc_type = self.ai.classify_type(doc["alias"], sample)
+        except Exception:
+            doc_type = doc.get("document_type") or rag.DEFAULT_DOC_TYPE
+
+        if doc_type == "squad_report_multi":
+            parts = rag.chunk_pages_with_squads(pages, self.ai.identify_squad)
+        else:
+            parts = [{"content": ch, "squad_name": None} for ch in rag.chunk_text(text)]
+        chunks = [p["content"] for p in parts]
         embeddings = self.ai.embed_documents(chunks)  # se falhar aqui, dados antigos intactos
-        items = [{"chunk_index": i, "content": ch, "embedding": emb}
-                 for i, (ch, emb) in enumerate(zip(chunks, embeddings))]
+        items = [{"chunk_index": i, "content": p["content"], "embedding": emb,
+                  "squad_name": p["squad_name"]}
+                 for i, (p, emb) in enumerate(zip(parts, embeddings))]
         self.chunks.delete_by_document(doc_id)
         self.chunks.create_many(doc_id, items, self.ai.embedding_model())
+        self.documents.set_type(doc_id, doc_type)
         self.audit.log(actor_id, "reindex_document", target_document_id=doc_id,
-                       details={"chunks": len(items)})
+                       details={"chunks": len(items), "document_type": doc_type})
         return len(items)
 
     # ── Auditoria ──────────────────────────────────────────────────────

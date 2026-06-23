@@ -250,7 +250,7 @@ def test_adm_29_forcar_reindexacao(as_admin, make_user, container, monkeypatch):
     b = make_user(email="b@x.com")
     did = _seed_doc(container, b["user_id"], "DoB", "private", chunks=2)
     container.storage.files[f"p/DoB"] = b"%PDF"
-    monkeypatch.setattr("services.rag.extract_pdf_text", lambda d: "sprint velocity " * 60)
+    monkeypatch.setattr("services.rag.extract_pdf_pages", lambda d: ["sprint velocity " * 60])
     r = client.post(f"/admin/documents/{did}/reindex")
     assert r.status_code == 200 and r.get_json()["chunks"] >= 1
 
@@ -260,7 +260,7 @@ def test_adm_30_reindexacao_falha_atomica(as_admin, make_user, container, monkey
     b = make_user(email="b@x.com")
     did = _seed_doc(container, b["user_id"], "DoB", "private", chunks=3)
     container.storage.files["p/DoB"] = b"%PDF"
-    monkeypatch.setattr("services.rag.extract_pdf_text", lambda d: "x " * 50)
+    monkeypatch.setattr("services.rag.extract_pdf_pages", lambda d: ["x " * 50])
     # embed falha → não pode perder os chunks antigos.
     def boom(chunks): raise RuntimeError("falha embed")
     monkeypatch.setattr(container.ai, "embed_documents", boom)
