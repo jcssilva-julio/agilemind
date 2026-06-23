@@ -189,3 +189,10 @@ def reindex_document(doc_id):
 @admin_required
 def audit_log():
     return jsonify({"entries": _svc().audit_list()}), 200
+
+
+@bp.get("/admin/version")
+@admin_required
+def version():
+    from services.version import get_version_info
+    return jsonify(get_version_info()), 200

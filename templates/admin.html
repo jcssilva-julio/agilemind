@@ -88,6 +88,7 @@ input:focus,select:focus{border-color:var(--accent)}
     <div class="tab" data-tab="audit">📜 Auditoria</div>
     <div class="spacer"></div>
     <a class="back" href="/">← voltar ao app</a>
+    <div id="versionInfo" style="font-size:10.5px;color:var(--dim);padding:8px 11px;line-height:1.5;font-family:'JetBrains Mono',monospace"></div>
   </aside>
 
   <main class="main">
@@ -279,7 +280,16 @@ async function loadAudit(){
     <td class="mono" style="font-size:11px">${e.details?JSON.stringify(e.details):'—'}</td></tr>`).join('');
 }
 
+// Versão do build no ar (commit + quando subiu)
+async function loadVersion(){
+  const {ok,data}=await api('GET','/admin/version');
+  if(!ok) return;
+  const started=(data.started_at||'').replace('T',' ').slice(0,16);
+  $('versionInfo').innerHTML=`versão <b style="color:var(--muted)">${esc(data.commit)}</b><br>no ar desde ${esc(started)} UTC`;
+}
+
 loadUsers();
+loadVersion();
 </script>
 </body>
 </html>
