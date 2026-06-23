@@ -303,6 +303,15 @@ html, body {
 }
 .alias-input:focus { border-color: var(--accent); }
 .alias-input::placeholder { color: var(--text-muted); }
+/* contenteditable: comporta-se como input de linha única, sem autofill do Safari */
+.alias-input[contenteditable] {
+  white-space: nowrap; overflow-x: auto; overflow-y: hidden;
+  line-height: 1.6; cursor: text; outline: none;
+}
+.alias-input[contenteditable]::-webkit-scrollbar { display: none; }
+.alias-input[contenteditable]:empty::before {
+  content: attr(data-placeholder); color: var(--text-muted); pointer-events: none;
+}
 
 .btn-upload {
   padding: 7px 12px;
@@ -979,11 +988,8 @@ html, body {
         </div>
       </div>
       <div class="alias-row">
-        <input class="alias-input" id="aliasInput" type="text" name="report-title"
-               placeholder="Nome do report (opcional)"
-               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-               data-1p-ignore data-lpignore="true"
-               readonly onfocus="this.removeAttribute('readonly')"/>
+        <div class="alias-input" id="aliasInput" contenteditable="true" role="textbox"
+             spellcheck="false" data-placeholder="Nome do report (opcional)"></div>
         <button class="btn-upload" id="btnUpload" disabled>Indexar</button>
       </div>
       <div style="display:flex;gap:7px;align-items:center;margin-top:8px">
@@ -1161,7 +1167,7 @@ fileInput.addEventListener('change', () => {
 
 function selectFile(f) {
   pendingFile = f;
-  aliasInput.placeholder = f.name.replace('.pdf', '');
+  aliasInput.dataset.placeholder = f.name.replace('.pdf', '');
   btnUpload.disabled = false;
   // Estado: arquivo selecionado
   uploadZone.classList.add('file-selected');
@@ -1176,8 +1182,8 @@ function selectFile(f) {
 function resetUploadZone() {
   pendingFile = null;
   fileInput.value = '';
-  aliasInput.value = '';
-  aliasInput.placeholder = 'Nome do report (opcional)';
+  aliasInput.textContent = '';
+  aliasInput.dataset.placeholder = 'Nome do report (opcional)';
   btnUpload.disabled = true;
   uploadZone.classList.remove('file-selected');
   iconUpload.style.display = '';
@@ -1197,9 +1203,19 @@ uploadFileChange.addEventListener('click', (e) => {
 
 btnUpload.addEventListener('click', doUpload);
 
+// aliasInput é contenteditable: força linha única e colagem como texto puro
+aliasInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); if (!btnUpload.disabled) doUpload(); }
+});
+aliasInput.addEventListener('paste', (e) => {
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\s+/g, ' ');
+  document.execCommand('insertText', false, text);
+});
+
 async function doUpload() {
   if (!pendingFile || isStreaming) return;
-  const alias = aliasInput.value.trim() || pendingFile.name.replace('.pdf', '');
+  const alias = aliasInput.textContent.trim() || pendingFile.name.replace('.pdf', '');
 
   btnUpload.disabled = true;
   uploadProgress.style.display = 'block';
