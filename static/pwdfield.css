@@ -1,0 +1,29 @@
+/* Componente de campo de senha (olho mostrar/ocultar). Usa fallbacks de cor
+   para funcionar em qualquer tela, independente das variáveis locais. */
+.pwdfield {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+.pwdfield > input {
+  width: 100%;
+  padding-right: 40px !important;
+}
+.pwdfield-eye {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  color: var(--text-muted, var(--muted, #7a87a0));
+  width: auto;
+}
+.pwdfield-eye:hover {
+  color: var(--accent, #00c896);
+}

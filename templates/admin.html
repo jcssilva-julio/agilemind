@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>AgileMind · Painel de Administração</title>
+<link rel="stylesheet" href="/static/pwdfield.css"/>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -61,6 +62,20 @@ input:focus,select:focus{border-color:var(--accent)}
 .toast code{font-family:'JetBrains Mono',monospace;background:var(--bg);padding:2px 6px;border-radius:4px;color:var(--accent)}
 .mono{font-family:'JetBrains Mono',monospace}
 .empty{color:var(--muted);font-size:13px;padding:20px 0}
+
+/* Responsivo (≤768px) */
+@media (max-width:768px){
+  .wrap{grid-template-columns:1fr;grid-template-rows:auto 1fr;height:auto;min-height:100vh}
+  .side{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;padding:12px;border-right:none;border-bottom:1px solid var(--border)}
+  .side .brand{width:100%;margin-bottom:0}
+  .side .spacer{display:none}
+  .side .tab{flex:0 0 auto;padding:7px 10px}
+  .side a.back{margin-left:auto}
+  .main{padding:18px 14px}
+  .head{flex-wrap:wrap;gap:10px}
+  .card{max-width:100%}
+  table{display:block;overflow-x:auto;white-space:nowrap}
+}
 </style>
 </head>
 <body>
@@ -87,7 +102,7 @@ input:focus,select:focus{border-color:var(--accent)}
         </div>
         <div class="grid2">
           <div><label>Papel</label><select id="nu_role"><option value="user">user</option><option value="admin">admin</option></select></div>
-          <div><label>Senha (vazio = gerar)</label><input id="nu_pass" type="text" placeholder="deixe vazio para gerar"/></div>
+          <div><label>Senha (vazio = gerar)</label><input id="nu_pass" type="password" data-pwd placeholder="deixe vazio para gerar"/></div>
         </div>
         <div style="margin-top:14px;display:flex;gap:8px">
           <button class="btn-primary" id="nu_create">Criar</button>
@@ -131,6 +146,7 @@ input:focus,select:focus{border-color:var(--accent)}
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="/static/pwdfield.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');

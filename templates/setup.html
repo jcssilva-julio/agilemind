@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>AgileMind · Primeiro acesso</title>
+<link rel="stylesheet" href="/static/pwdfield.css"/>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -34,18 +35,19 @@ button:disabled{opacity:.5}
     <div class="sub">Crie o primeiro administrador do sistema. Isto só funciona uma vez, enquanto não houver nenhum admin. Use a <b>senha master</b> (do servidor).</div>
     <div class="master">
       <label>Senha master</label>
-      <input id="master" type="password" autocomplete="off"/>
+      <input id="master" type="password" data-pwd autocomplete="off"/>
     </div>
     <label>E-mail do admin</label>
     <input id="email" type="email" placeholder="admin@empresa.com"/>
     <label>Nome</label>
     <input id="nome" type="text" placeholder="Seu nome"/>
     <label>Senha (mín. 8)</label>
-    <input id="password" type="text" placeholder="senha do admin"/>
+    <input id="password" type="password" data-pwd placeholder="senha do admin"/>
     <button id="btn" type="submit">Criar administrador</button>
     <div class="msg" id="msg"></div>
     <div class="foot"><a href="/login">← ir para o login</a></div>
   </form>
+<script src="/static/pwdfield.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 $('f').addEventListener('submit',async e=>{

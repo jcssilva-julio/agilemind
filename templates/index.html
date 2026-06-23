@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>AgileMind · Análise de Squads</title>
+<link rel="stylesheet" href="/static/pwdfield.css"/>
 <style>
 /* ═══════════════════════════════════════════════════════
    TOKENS
@@ -804,18 +805,12 @@ html, body {
 .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
 .modal .modal-sub { font-size: 12.5px; color: var(--text-secondary); margin-bottom: 14px; }
 .modal label { display: block; font-size: 12px; color: var(--text-secondary); margin: 12px 0 5px; }
-.pwd-field { position: relative; }
-.pwd-field input {
+.modal-input {
   width: 100%; background: var(--bg-elevated); border: 1px solid var(--border-md);
-  border-radius: var(--radius-md); padding: 10px 38px 10px 12px;
+  border-radius: var(--radius-md); padding: 10px 12px;
   color: var(--text-primary); font-size: 13.5px; font-family: var(--font-main); outline: none;
 }
-.pwd-field input:focus { border-color: var(--accent); }
-.pwd-eye {
-  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-  background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex;
-}
-.pwd-eye:hover { color: var(--accent); }
+.modal-input:focus { border-color: var(--accent); }
 .modal-err {
   display: none; margin-top: 12px; background: rgba(255,92,92,0.08);
   border: 1px solid rgba(255,92,92,0.3); color: var(--red);
@@ -829,6 +824,42 @@ html, body {
 }
 .modal-btn-primary { background: var(--accent); color: #050f0a; }
 .modal-btn-ghost { background: var(--bg-elevated); color: var(--text-secondary); border: 1px solid var(--border-md); }
+
+/* ═══ Hambúrguer / drawer (mobile) ═══ */
+.hamburger { display: none; background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; align-items: center; }
+.hamburger:hover { color: var(--text-primary); }
+.sidebar-backdrop { display: none; }
+
+/* ═══ Responsivo (≤768px) ═══ */
+@media (max-width: 768px) {
+  .app { grid-template-columns: 1fr; }
+  .hamburger { display: flex; }
+  .header { padding: 0 12px; gap: 9px; }
+  .header-divider { display: none; }
+  .header-author { display: none; }
+  .header-status { display: none; }
+  .logo-name-sub { display: none; }
+  .header-doc-badge { max-width: 120px; }
+  .btn-label { display: none; }
+  .btn-clear { padding: 6px 8px !important; margin-left: 6px !important; gap: 0; }
+
+  .sidebar {
+    position: fixed; top: 54px; bottom: 0; left: 0;
+    width: 84%; max-width: 320px;
+    transform: translateX(-100%); transition: transform 0.25s ease; z-index: 40;
+  }
+  .sidebar.open { transform: translateX(0); box-shadow: 0 0 40px rgba(0,0,0,0.6); }
+  .sidebar-backdrop { position: fixed; inset: 54px 0 0 0; background: rgba(0,0,0,0.5); z-index: 35; }
+  .sidebar-backdrop.show { display: block; }
+
+  .chat-area { padding: 16px 14px; gap: 16px; }
+  .input-bar { padding: 12px 14px 16px; }
+  .msg-body { font-size: 14px; }
+  .msg-avatar { width: 28px; height: 28px; }
+  .empty-state { padding: 24px 18px; gap: 16px; }
+  .empty-title { font-size: 19px; }
+  .empty-sub { font-size: 13px; }
+}
 </style>
 </head>
 <body>
@@ -836,6 +867,9 @@ html, body {
 
   <!-- ════ HEADER ════ -->
   <header class="header">
+    <button class="hamburger" id="btnMenu" aria-label="Abrir menu">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+    </button>
     <div class="logo-wrap">
       <!-- Logo SVG AgileMind -->
       <svg class="logo-svg" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -889,19 +923,20 @@ html, body {
       <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
         <path d="M2 2l9 9M11 2l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
-      Limpar
+      <span class="btn-label">Limpar</span>
     </button>
     <div class="header-author">by Júlio Cesar</div>
-    <a class="btn-clear hidden" id="lnkAdmin" href="/admin" title="Painel de administração" style="margin-left:10px;text-decoration:none">⚙️ Admin</a>
-    <button class="btn-clear" id="btnChangePwd" title="Trocar senha" style="margin-left:10px">🔑 Senha</button>
+    <a class="btn-clear hidden" id="lnkAdmin" href="/admin" title="Painel de administração" style="margin-left:10px;text-decoration:none">⚙️<span class="btn-label"> Admin</span></a>
+    <button class="btn-clear" id="btnChangePwd" title="Trocar senha" style="margin-left:10px">🔑<span class="btn-label"> Senha</span></button>
     <button class="btn-clear" id="btnLogout" title="Sair" style="margin-left:10px">
       <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
         <path d="M5.5 12.5H2.5A1 1 0 0 1 1.5 11.5V2.5A1 1 0 0 1 2.5 1.5H5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
         <path d="M9 9.5L12 7L9 4.5M12 7H5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      Sair
+      <span class="btn-label">Sair</span>
     </button>
   </header>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
   <!-- ════ SIDEBAR ════ -->
   <aside class="sidebar">
@@ -1035,20 +1070,11 @@ html, body {
     <h3>Trocar senha</h3>
     <div class="modal-sub">Por segurança, você será deslogado após a troca.</div>
     <label>Senha atual</label>
-    <div class="pwd-field">
-      <input id="pwd_cur" type="password" autocomplete="current-password" placeholder="••••••••"/>
-      <button class="pwd-eye" type="button" onclick="togglePwd(this)"></button>
-    </div>
+    <input id="pwd_cur" class="modal-input" type="password" data-pwd autocomplete="current-password" placeholder="••••••••"/>
     <label>Nova senha (mín. 8)</label>
-    <div class="pwd-field">
-      <input id="pwd_new" type="password" autocomplete="new-password" placeholder="••••••••"/>
-      <button class="pwd-eye" type="button" onclick="togglePwd(this)"></button>
-    </div>
+    <input id="pwd_new" class="modal-input" type="password" data-pwd autocomplete="new-password" placeholder="••••••••"/>
     <label>Confirmar nova senha</label>
-    <div class="pwd-field">
-      <input id="pwd_conf" type="password" autocomplete="new-password" placeholder="••••••••"/>
-      <button class="pwd-eye" type="button" onclick="togglePwd(this)"></button>
-    </div>
+    <input id="pwd_conf" class="modal-input" type="password" data-pwd autocomplete="new-password" placeholder="••••••••"/>
     <div class="modal-err" id="pwd_err"></div>
     <div class="modal-actions">
       <button class="modal-btn-ghost" id="pwd_cancel" type="button">Cancelar</button>
@@ -1057,6 +1083,7 @@ html, body {
   </div>
 </div>
 
+<script src="/static/pwdfield.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════
 //  STATE
@@ -1319,6 +1346,9 @@ function activateReport(documentId, alias) {
   document.querySelectorAll('.report-item').forEach(el => {
     el.classList.toggle('active', el.dataset.documentId === documentId);
   });
+
+  // Fecha o drawer no mobile ao ativar um report
+  closeSidebar();
 
   // Welcome message
   if (chatArea.children.length === 0) {
@@ -1618,6 +1648,14 @@ document.getElementById('btnLogout').addEventListener('click', async () => {
   window.location.href = '/login';
 });
 
+// Drawer da sidebar (mobile)
+const sidebarEl = document.querySelector('.sidebar');
+const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+function openSidebar() { sidebarEl.classList.add('open'); sidebarBackdrop.classList.add('show'); }
+function closeSidebar() { sidebarEl.classList.remove('open'); sidebarBackdrop.classList.remove('show'); }
+document.getElementById('btnMenu').addEventListener('click', openSidebar);
+sidebarBackdrop.addEventListener('click', closeSidebar);
+
 // Mostra o link de Admin só para administradores (role do /me)
 async function checkRole() {
   try {
@@ -1629,17 +1667,7 @@ async function checkRole() {
   } catch {}
 }
 
-// Trocar senha — modal com campos mascarados e olhozinho
-const EYE_ON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 8s2.5-4.5 7-4.5S15 8 15 8s-2.5 4.5-7 4.5S1 8 1 8z" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/></svg>';
-const EYE_OFF = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6.6 6.6a2 2 0 0 0 2.8 2.8" stroke="currentColor" stroke-width="1.3"/><path d="M3.4 4.3C1.9 5.4 1 8 1 8s2.5 4.5 7 4.5c1.3 0 2.4-.3 3.3-.8M6.6 3.6c.45-.07.9-.1 1.4-.1 4.5 0 7 4.5 7 4.5s-.6 1.1-1.8 2.3" stroke="currentColor" stroke-width="1.3"/><path d="M2 2l12 12" stroke="currentColor" stroke-width="1.3"/></svg>';
-
-function togglePwd(btn) {
-  const input = btn.parentElement.querySelector('input');
-  const hidden = input.type === 'password';
-  input.type = hidden ? 'text' : 'password';
-  btn.innerHTML = hidden ? EYE_OFF : EYE_ON;
-}
-
+// Trocar senha — modal usando o componente reutilizável de senha (pwdfield)
 const pwdModal = document.getElementById('pwdModal');
 const pwdErr = document.getElementById('pwd_err');
 
@@ -1647,7 +1675,6 @@ function openPwdModal() {
   ['pwd_cur', 'pwd_new', 'pwd_conf'].forEach(id => {
     const i = document.getElementById(id); i.value = ''; i.type = 'password';
   });
-  document.querySelectorAll('.pwd-eye').forEach(b => b.innerHTML = EYE_ON);
   pwdErr.classList.remove('show'); pwdErr.textContent = '';
   pwdModal.classList.add('show');
   document.getElementById('pwd_cur').focus();
